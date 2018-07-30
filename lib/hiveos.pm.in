@@ -32,7 +32,6 @@ package hiveos;
 #   security-object AquafinGeneral security aaa radius-server accounting primary 10.1.10.110 shared-secret ***
 #   security-object AquafinGeneral security aaa radius-server backup1 10.1.10.111 shared-secret ***
 #   security-object AquafinGeneral security aaa radius-server accounting backup1 10.1.10.111 shared-secret ***
-#   admin root-admin admin password ***
 
 
 use 5.010;
@@ -122,7 +121,7 @@ sub ShowVersion {
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
-	next if (/^Copyright/);
+	next if (/^(Copyright|Aerohive)/);
 	next if (/^Uptime:/);
 	next if (/^\s+\^$/);
 
@@ -168,30 +167,36 @@ sub WriteTerm {
 #        }
 
 	# filter passwords
+	# XXX hiveos likes to add single spaces behind some config lines, so when we test for EOL
+	# always add a \s? so we match with or without trailing space
 
 	# hive <hivename> password <password> 
-	if(/^(hive \S+ password )\S+$/ && $filter_pwds >= 2) {
+	if(/^(hive \S+ password )\S+\s?$/ && $filter_pwds >= 2) {
+		ProcessHistory("","","","!$1<removed>\n");
+		next;
+	}
+
+	# admin <(root-admin|read-write|read-only)> <username> password <password>
+	if(/^(admin (root-admin|read-write|read-only) \S+ password )\S+\s?$/ && $filter_pwds >= 2) {
 		ProcessHistory("","","","!$1<removed>\n");
 		next;
 	}
 
 	# security-object <object> security protocol-suite wpa2-aes-psk hex-key <hexkey>
-	# some hiveos versions leave a whitespace after the actual key
-	if(/^(security-object \S+ security protocol-suite wpa2-aes-psk hex-key )\S+/ && $filter_pwds >= 1) {
+	if(/^(security-object \S+ security protocol-suite wpa2-aes-psk hex-key )\S+\s?$/ && $filter_pwds >= 1) {
 		ProcessHistory("","","","!$1<removed>\n");
 		next;
 	}
 
-	# capwap client dtls hm-defined-passphrase <passphase> key-id <id>
-	if(/^(capwap client dtls hm-defined-passphrase )\S+( key-id (\S+))$/ && $filter_pwds >= 2) {
+	# capwap client dtls hm-defined-passphrase <passphrase> key-id <id>
+	if(/^(capwap client dtls hm-defined-passphrase )\S+( key-id (\S+))\s?$/ && $filter_pwds >= 2) {
 		ProcessHistory("","","","!$1<removed>$2\n");
 		next;
 	}
 
 	# application reporting upload <url> time-window <numeric> admin <user> password <password> (<basic|digest>)
 	# basic is base64 so reversable, digest should be md5 hashed
-
-	if(/^(application reporting upload \S+ time-window \d+ admin \S+ password )\S+ (\S+)/ &&
+	if(/^(application reporting upload \S+ time-window \d+ admin \S+ password )\S+ (\S+)\s?$/ &&
 		(($filter_pwds >= 1 && $2 eq "basic") || $filter_pwds >= 2)) {
 		ProcessHistory("","","","!$1<removed> $2\n");
 		next;
