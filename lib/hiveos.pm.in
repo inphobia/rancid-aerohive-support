@@ -217,14 +217,11 @@ sub WriteTerm {
 #            }
 #            next;
 #	}
-	# snmp reader version v2c community <community> <ip>
-	# hivemanager-ng will convert "ip objects" names to ip addresses in the final config
-	if (/^(snmp reader version v2c community )\S+ (\d+\.\d+\.\d+\.\d+)$/) {
-		if ($filter_commstr) {
-			ProcessHistory("SNMPSERVERHOST","ipsort","$2","!$1<removed> $2\n");
-		} else {
-			ProcessHistory("SNMPSERVERHOST","ipsort","$2","$_");
-		}
+	# snmp reader version <(any|v1|v2c)> community <community> <string>
+	# snmp reader version v3 admin <username>
+	# snmp reader version v3 admin <username> auth (<md5|sha>) password <password> encryption <(des|aes|aes128)> password <password>
+	if (/^(snmp reader version (any|v1|v2c) community )\S+ (\S+)$/ && $filter_commstr) {
+		ProcessHistory("","","","!$1<removed> $3\n");
 		next;
 	}
 
