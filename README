@@ -120,6 +120,7 @@ lib/
 	eos.pm.in	rancid library for Compass EOS.
 	exos.in		rancid library for Extreme switches.
 	foundry.pm.in	rancid library for Foundry (Brocade) switches.
+	hiveos.pm.in	rancid library for aerohive hiveos access points.
 	ios.pm.in	rancid library for Cisco IOS and IOS-XE.
 	iosxr.pm.in	rancid library for Cisco IOS-XR.
 	junos.pm.in	rancid library for Juniper JunOS.
