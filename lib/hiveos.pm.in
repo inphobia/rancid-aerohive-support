@@ -12,6 +12,8 @@ package hiveos;
 # based on iossb.pm.in revision 3472 &
 # nxos.pm.in version 3843
 #
+# done by nick.nauwelaerts@aquafin.be
+#
 # tested on configs pushed by hivemanager-ng 12.8.1.2:
 #   model ap121, hiveos version 6.5r4
 #   model ap121, hiveos version 6.5r8a
@@ -23,15 +25,12 @@ package hiveos;
 #   model ap250, hiveos version 8.3r5
 
 # NOCOMMSTR:
-#   always show by default on hiveos!
 #   done for v2 reader 
-#   not done for traps & other versions & hostnames
+#   not done for traps & version v3
 
 # passwd todo:
-#   security-object AquafinGeneral security aaa radius-server primary 10.1.10.110 shared-secret ***
-#   security-object AquafinGeneral security aaa radius-server accounting primary 10.1.10.110 shared-secret ***
-#   security-object AquafinGeneral security aaa radius-server backup1 10.1.10.111 shared-secret ***
-#   security-object AquafinGeneral security aaa radius-server accounting backup1 10.1.10.111 shared-secret ***
+#   security-object AquafinGeneral security aaa radius-server primary 
+#   security-object AquafinGeneral security aaa radius-server accounting backup1
 
 
 use 5.010;
@@ -142,29 +141,7 @@ sub WriteTerm {
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	next if (/^\s+\^$/);
-
-	# skip emtpy lines at the beginning
-#	if (!$linecnt && /^\s*$/) {
-#	    next;
-#	}
 	$linecnt++;
-
-	# these appear to be reversables
-	# enable password level 15 encrypted z9111212555bd4b0d3bec0b98f7ddd6346
-#        if (/^(enable )?(password|passwd)( level \d+)? / && $filter_pwds >= 1) {
-#            ProcessHistory("ENABLE","","","!$1$2$3 <removed>\n");
-#            next;
-#        }
-	# username cisco password encrypted z9111212555bd4b0d3bec0b98f7ddd6346 privilege 15
-#        if (/^username (\S+)(\s.*)? password encrypted (\S+)/) {
-#            if ($filter_pwds >= 1){
-#                ProcessHistory("USER","keysort","$1",
-#                               "!username $1$2 password encrypted <removed>$'");
-#            } else {
-#                ProcessHistory("USER","keysort","$1","$_");
-#            }
-#            next;
-#        }
 
 	# filter passwords
 	# XXX hiveos likes to add single spaces behind some config lines, so when we test for EOL
@@ -217,6 +194,7 @@ sub WriteTerm {
 #            }
 #            next;
 #	}
+
 	# snmp reader version <(any|v1|v2c)> community <community> <string>
 	# snmp reader version v3 admin <username>
 	# snmp reader version v3 admin <username> auth (<md5|sha>) password <password> encryption <(des|aes|aes128)> password <password>
@@ -225,13 +203,6 @@ sub WriteTerm {
 		next;
 	}
 
-	# encrypted tacacs-server host <ip> key <keyhash> priority 1
-	# encrypted tacacs-server key <keyhash>
-#	if (/^(encrypted (tacacs|radius)-server\s.*\s?key) (\S+)/
-#	    && $filter_pwds >= 1) {
-#	    ProcessHistory("","","","!$1 <removed>$'"); next;
-#	}
-
 	# catch anything that wasnt matched above.
 	ProcessHistory("","","","$_");
 
@@ -239,8 +210,8 @@ sub WriteTerm {
 	# XXX no definitive end of config marker.
     }
 
-    # hiveos lacks a definitive "end of config" marker.  If we ave seen at least
-    # 5 linus of write term output, we can be reasonably sure that we have the config.
+    # hiveos lacks a definitive "end of config" marker.  If we have seen at least
+    # 5 lines of write term output, we can be reasonably sure that we have the config.
     if ($linecnt > 5) { 
         $found_end = 1;
     }
