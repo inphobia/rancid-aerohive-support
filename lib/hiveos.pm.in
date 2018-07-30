@@ -12,6 +12,15 @@ package hiveos;
 # based on iossb.pm.in revision 3472 &
 # nxos.pm.in version 3843
 #
+# tested on configs pushed by hivemanager-ng 12.8.1.2:
+#   model ap121, hiveos version 6.5r4
+#   model ap121, hiveos version 6.5r8a
+#   model ap121, hiveos version 6.5r8b
+#   model ap121, hiveos version 6.5r9
+#   model ap230, hiveos version 6.5r8b
+#   model ap250, hiveos version 8.0r1a
+#   model ap250, hiveos version 8.3r2
+#   model ap250, hiveos version 8.3r5
 
 # NOCOMMSTR:
 #   always show by default on hiveos!
@@ -19,17 +28,11 @@ package hiveos;
 #   not done for traps & other versions & hostnames
 
 # passwd todo:
-#   security-object AquafinSecure security protocol-suite wpa2-aes-psk hex-key ***
 #   security-object AquafinGeneral security aaa radius-server primary 10.1.10.110 shared-secret ***
 #   security-object AquafinGeneral security aaa radius-server accounting primary 10.1.10.110 shared-secret ***
 #   security-object AquafinGeneral security aaa radius-server backup1 10.1.10.111 shared-secret ***
 #   security-object AquafinGeneral security aaa radius-server accounting backup1 10.1.10.111 shared-secret ***
-#   hive HIVE-Aquafin password ***
 #   admin root-admin admin password ***
-#   capwap client dtls hm-defined-passphrase *** key-id 1
-#   application reporting upload https://hivemanagerng.aquafin.be:443/afs-webapp/l7report/2/ time-window 15 admin VHM-000001VA password *** basic
-
- 
 
 
 use 5.010;
@@ -164,6 +167,36 @@ sub WriteTerm {
 #            next;
 #        }
 
+	# filter passwords
+
+	# hive <hivename> password <password> 
+	if(/^(hive \S+ password )\S+$/ && $filter_pwds >= 2) {
+		ProcessHistory("","","","!$1<removed>\n");
+		next;
+	}
+
+	# security-object <object> security protocol-suite wpa2-aes-psk hex-key <hexkey>
+	# some hiveos versions leave a whitespace after the actual key
+	if(/^(security-object \S+ security protocol-suite wpa2-aes-psk hex-key )\S+/ && $filter_pwds >= 1) {
+		ProcessHistory("","","","!$1<removed>\n");
+		next;
+	}
+
+	# capwap client dtls hm-defined-passphrase <passphase> key-id <id>
+	if(/^(capwap client dtls hm-defined-passphrase )\S+( key-id (\S+))$/ && $filter_pwds >= 2) {
+		ProcessHistory("","","","!$1<removed>$2\n");
+		next;
+	}
+
+	# application reporting upload <url> time-window <numeric> admin <user> password <password> (<basic|digest>)
+	# basic is base64 so reversable, digest should be md5 hashed
+
+	if(/^(application reporting upload \S+ time-window \d+ admin \S+ password )\S+ (\S+)/ &&
+		(($filter_pwds >= 1 && $2 eq "basic") || $filter_pwds >= 2)) {
+		ProcessHistory("","","","!$1<removed> $2\n");
+		next;
+	}
+
 	# order/prune snmp statements
 	# we only prune lines of the form
 	# snmp-server host <ip> traps version 2c <community>
@@ -179,7 +212,7 @@ sub WriteTerm {
 	# hivemanager-ng will convert "ip objects" names to ip addresses in the final config
 	if (/^(snmp reader version v2c community )\S+ (\d+\.\d+\.\d+\.\d+)$/) {
 		if ($filter_commstr) {
-			ProcessHistory("SNMPSERVERHOST","ipsort","$2","! $1<removed> $2\n");
+			ProcessHistory("SNMPSERVERHOST","ipsort","$2","!$1<removed> $2\n");
 		} else {
 			ProcessHistory("SNMPSERVERHOST","ipsort","$2","$_");
 		}
