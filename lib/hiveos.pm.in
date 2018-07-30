@@ -176,6 +176,9 @@ sub WriteTerm {
 		next;
 	}
 
+	# security-object <object> security aaa radius-server <(primary|backup(1|2|3))> <(ip|ipv6|string)> shared-secret <key>
+	# security-object <object> security aaa radius-server accounting <(primary|backup(1|2|3))> <(ip|ipv6|string)> shared-secret <key>
+
 	# admin <(root-admin|read-write|read-only)> <username> password <password>
 	if(/^(admin (root-admin|read-write|read-only) \S+ password )\S+\s?$/ && $filter_pwds >= 2) {
 		ProcessHistory("","","","!$1<removed>\n");
@@ -183,7 +186,8 @@ sub WriteTerm {
 	}
 
 	# security-object <object> security protocol-suite wpa2-aes-psk hex-key <hexkey>
-	if(/^(security-object \S+ security protocol-suite wpa2-aes-psk hex-key )\S+\s?$/ && $filter_pwds >= 1) {
+	# wpa-auto-psk & wpa2-tkip-psk syntax not tested
+	if(/^(security-object \S+ security protocol-suite (wpa2-aes-psk|wpa-auto-psk|wpa2-tkip-psk) hex-key )\S+\s?$/ && $filter_pwds >= 1) {
 		ProcessHistory("","","","!$1<removed>\n");
 		next;
 	}
