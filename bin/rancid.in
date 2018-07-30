@@ -1,0 +1,133 @@
+#! @PERLV_PATH@
+##
+## $Id: rancid.in 3613 2017-02-22 21:37:22Z heas $
+##
+## @PACKAGE@ @VERSION@
+@copyright@
+#
+#  RANCID - Really Awesome New Cisco confIg Differ
+#
+#  rancid - generalized rancid module; command schedule is derived from the
+#	    rancid.types.{base,conf} configurations.
+#
+# usage: rancid [-dhltCV] -t device_type [-f filename | hostname]
+#
+use 5.010;
+use strict 'vars';
+use warnings;
+no warnings 'uninitialized';
+use Exporter;
+use Getopt::Std;
+our($opt_d, $opt_f, $opt_h, $opt_l, $opt_t, $opt_C, $opt_V);
+getopts('dfhlt:CV');
+BEGIN {
+    push(@INC, "@pkglibdir@");
+}
+use rancid;
+our @ISA = qw(Exporter rancid);
+
+sub usage()
+{
+    print STDERR "rancid [-dhltCV] -t device_type [-f filename | hostname]\n";
+    exit 64;
+}
+
+if ($opt_h) {
+    usage();
+}
+
+# basic initialization
+rancidinit();
+
+# load device type spec, build @commandtable and load modules
+if (loadtype($devtype)) {
+    die "Couldn't load device type spec for $rancid::devtype\n";
+}
+if (! defined($lscript)) {
+    die "login script not defined for device type $rancid::devtype\n";
+}
+
+# open the temporary file for the digested output
+open(OUTPUT,">$host.new") || die "Can't open $host.new for writing: $!\n";
+select(OUTPUT);
+if (length($#modules)) {
+    my($module);
+
+    foreach $module (@modules) {
+	(my $file = $module) =~ s/::/\//g;
+	my($err) = 0;
+
+	# call module->init(); we expect 0 as success, as god intended it
+	eval "\$err = ". $module ."::init();";
+	if ($@) {
+	    printf(STDERR "loadtype: initializing $module failed: %s\n", $@);
+	    exit 1;
+	} elsif ($err) {
+	    printf(STDERR "loadtype: %s::init() returned failure\n", $module);
+	    exit 1;
+	}
+    }
+}
+
+# open the input, a pre-collected file or start a login for a login stream or
+# temporary file
+if ($file) {
+    print(STDERR "opening file $host\n") if ($debug || $log);
+    open(INPUT,"<$host") || die "open failed for $host: $!\n";
+} else {
+    print(STDERR "executing $lscript -t $timeo -c\"$commandstr\" $host\n") if ($debug || $log);
+    if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
+	system "$lscript -t $timeo -c \"$commandstr\" $host </dev/null > $host.raw 2>&1" || die "clogin failed for $host: $!\n";
+	open(INPUT, "< $host.raw") || die "clogin failed for $host: $!\n";
+    } else {
+	open(INPUT,"$lscript -t $timeo -c \"$commandstr\" $host </dev/null |") || die "clogin failed for $host: $!\n";
+    }
+}
+
+# loop over the input using the provided input/main loop
+if (!defined($inloop) || length($inloop) < 1) {
+    die "inloop is not configured for device type $devtype";
+}
+eval($inloop ."(*INPUT, *OUTPUT);") && die "${inloop} failed: $@\n";
+
+print STDOUT "Done $lscript: $_\n" if ($log);
+# Flush History
+ProcessHistory("","","","");
+# Cleanup
+close(INPUT);
+close(OUTPUT);
+
+if (defined($ENV{NOPIPE}) && $ENV{NOPIPE} =~ /^YES/i) {
+    unlink("$host.raw") if (! $debug);
+}
+
+# check for completeness
+if (scalar(%commands) || !$clean_run || !$found_end) {
+    if (scalar(keys %commands) eq $commandcnt) {
+	printf(STDERR "$host: missed cmd(s): all commands\n");
+    } elsif (scalar(%commands)) {
+	my($count, $i) = 0;
+	for ($i = 0; $i < $#commands; $i++) {
+	    if ($commands{$commands[$i]}) {
+		if (!$count) {
+		    printf(STDERR "$host: missed cmd(s): %s", $commands[$i]);
+		} else {
+		    printf(STDERR ", %s", $commands[$i]);
+		}
+		$count++;
+	    }
+	}
+	if ($count) {
+	    printf(STDERR "\n");
+	}
+    }
+    if (!$clean_run || !$found_end) {
+	print(STDERR "$host: End of run not found\n");
+	if ($debug) {
+	    print(STDERR "$host: clean_run is false\n") if (!$clean_run);
+	    print(STDERR "$host: found_end is false\n") if (!$found_end);
+	}
+	system("/usr/bin/tail -1 $host.new");
+    }
+    unlink "$host.new" if (! $debug);
+}

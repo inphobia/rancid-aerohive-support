@@ -1,0 +1,97 @@
+#! /bin/sh
+
+rm -f par.tmp par.log.*
+trap 'rm -fr par.tmp;' 1 2 15
+
+echo "Testing par"; echo
+
+echo "Testing cmd in input file A"
+../bin/par par.a.in
+for f in par.log*; do
+    LN=`wc -l $f| sed -Ee 's/([0-9]+).*/\1/'`
+    if test $LN -ne 5; then
+	echo "FAIL: $f should have 5 lines but has $LN" >&2
+	exit 1
+    fi
+done
+egrep -v '^(!|Ending: )' par.log.* | cut -d: -f 2 | sort > par.a.out
+svn diff par.a.out >par.tmp
+if test $? -ne 0; then
+    echo "FAIL: svn diff par.a.out does not failed" >&2
+    exit 1
+fi
+LN=`wc -l par.tmp | sed -Ee 's/([0-9]+).*/\1/'`
+if test $LN -ne 0; then
+    echo "FAIL: par.a.out does not match expected output" >&2
+    exit 1
+fi
+rm -f par.tmp par.log.*
+
+
+echo "Testing cmd in input file A with -q"
+../bin/par -q par.a.in |sort -n > par.a.out
+svn diff par.a.out >par.tmp
+if test $? -ne 0; then
+    echo "FAIL: svn diff par.a.out does not failed" >&2
+    exit 1
+fi
+LN=`wc -l par.tmp | sed -Ee 's/([0-9]+).*/\1/'`
+if test $LN -ne 0; then
+    echo "FAIL: par.a.out does not match expected output" >&2
+    exit 1
+fi
+
+echo "Testing command-line command on input file B with -qnc"
+../bin/par -q -n 1 -c 'echo -n {}' par.b.in > par.b.out
+svn diff par.b.out >par.tmp
+if test $? -ne 0; then
+    echo "FAIL: svn diff par.b.out does not failed" >&2
+    exit 1
+fi
+LN=`wc -l par.tmp | sed -Ee 's/([0-9]+).*/\1/'`
+if test $LN -ne 0; then
+    echo "FAIL: par.b.out does not match expected output" >&2
+    exit 1
+fi
+
+echo "Testing command-line command on two input files (A + B) with -qn1c"
+../bin/par -q -n 1 -c 'echo -n {}' par.a.in par.b.in > par.ab.out
+svn diff par.ab.out >par.tmp
+if test $? -ne 0; then
+    echo "FAIL: svn diff par.ab.out does not failed" >&2
+    exit 1
+fi
+LN=`wc -l par.tmp | sed -Ee 's/([0-9]+).*/\1/'`
+if test $LN -ne 0; then
+    echo "FAIL: par.ab.out does not match expected output" >&2
+    exit 1
+fi
+
+echo "Testing command-per-line on input file C with -qn1"
+../bin/par -q -n 1 par.c.in > par.c.out
+svn diff par.c.out >par.tmp
+if test $? -ne 0; then
+    echo "FAIL: svn diff par.c.out does not failed" >&2
+    exit 1
+fi
+LN=`wc -l par.tmp | sed -Ee 's/([0-9]+).*/\1/'`
+if test $LN -ne 0; then
+    echo "FAIL: par.c.out does not match expected output" >&2
+    exit 1
+fi
+
+echo "Testing command-per-line on stdin input file C with -qn1"
+cat par.c.in | ../bin/par -q -n 1 > par.c.out
+svn diff par.c.out >par.tmp
+if test $? -ne 0; then
+    echo "FAIL: svn diff par.c.out does not failed" >&2
+    exit 1
+fi
+LN=`wc -l par.tmp | sed -Ee 's/([0-9]+).*/\1/'`
+if test $LN -ne 0; then
+    echo "FAIL: par.c.out does not match expected output" >&2
+    exit 1
+fi
+
+rm -f par.tmp par.log.*
+echo PASS
