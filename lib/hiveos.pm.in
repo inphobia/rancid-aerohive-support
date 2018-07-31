@@ -23,11 +23,9 @@ package hiveos;
 #   model ap250, hiveos version 8.0r1a
 #   model ap250, hiveos version 8.3r2
 #   model ap250, hiveos version 8.3r5
-
-# NOCOMMSTR:
-#   done for v2 reader 
-#   not done for traps & version v3
-#   security-object AquafinGeneral security aaa radius-server accounting backup1
+#
+# hiveos cli references can be found here
+# https://docs.aerohive.com/330000/docs/help/english/ng/Content/reference/docs/cli-reference-guides.htm
 
 
 use 5.010;
@@ -121,6 +119,8 @@ sub ShowVersion {
 	next if (/^(Copyright|Uptime|Aerohive (Networks|hardware))/);
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
+	/^\s+\^-- Ambiguous input\s+$/ && return(1);
+	/^ERROR: login user is not super user/ && return(1);
 
 	ProcessHistory("COMMENTS","","","!ver: $_");
     }
@@ -140,6 +140,8 @@ sub ShowBoot {
 	next if (/^boot parameters:/);
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
+	/^\s+\^-- Ambiguous input\s+$/ && return(1);
+	/^ERROR: login user is not super user/ && return(1);
 
 	ProcessHistory("COMMENTS","","","!boot-param: $_");
     }
@@ -158,6 +160,8 @@ sub ShowIDManager {
 	next if (/^(\s*|\s*$cmd\s*)$/);
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
+	/^\s+\^-- Ambiguous input\s+$/ && return(1);
+	/^ERROR: login user is not super user/ && return(1);
 
 	ProcessHistory("COMMENTS","","","!id-manager: $_");
     }
@@ -176,6 +180,8 @@ sub ShowLicense {
 	next if (/^(\s*|\s*$cmd\s*)$/);
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
+	/^\s+\^-- Ambiguous input\s+$/ && return(1);
+	/^ERROR: login user is not super user/ && return(1);
 
 	ProcessHistory("COMMENTS","","","!license: $_");
     }
@@ -196,31 +202,52 @@ sub WriteTerm {
 	next if (/^(\s*|\s*$cmd\s*)$/);
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
+	/^\s+\^-- Ambiguous input\s+$/ && return(1);
+	/^ERROR: login user is not super user/ && return(1);
 
 	$linecnt++;
 
-	# filter passwords
-	# XXX hiveos likes to add single spaces behind some config lines, so when we test for EOL
-	# always add a \s? so we match with or without trailing space
+	# XXX hiveos likes to add single spaces behind some config lines. this mostly happens
+	# when the command is not using all possible flags/options, but sometimes also on
+	# complete commands ("admin root-admin ..." for example). keep this in mind when using regular
+	# expressions and testing for EOL, checking for a trailing space with \s? at the end is advised.
+	# on the plus side, is does make sure the arguments will always be in a fixed order.
 
-	# hive <hivename> password <password> 
+	# filter passwords
+
+	# hive <string> password <string>
 	if(/^(hive \S+ password )\S+\s?$/ && $filter_pwds >= 2) {
 		ProcessHistory("","","","!$1<removed>\n");
 		next;
 	}
 
-	# security-object <object> security aaa radius-server <(primary|backup(1|2|3))> <(ip|ipv6|string)> shared-secret <key>
-	# security-object <object> security aaa radius-server accounting <(primary|backup(1|2|3))> <(ip|ipv6|string)> shared-secret <key>
-	if (/^(security-object \S+ security aaa radius-server (accounting )?(primary|backup(1|2|3)) \S+ shared-secret )\S+\s?$/ &&  $filter_pwds >= 2) {
-		ProcessHistory("","","","!$1<removed>\n");
+	# security-object <string> security aaa radius-server accounting {primary|backup1|backup2|backup3} \
+	#   <ip_addr|ipv6_addr|string_64> [ shared-secret <string> ] [ acct-port <number> ] [ via-vpn-tunnel ]
+	# security-object <string> security aaa radius-server {primary|backup1|backup2|backup3} \
+	#   <ip_addr|ipv6_addr|string_64> [ shared-secret <string> ] [ auth-port <number> ] [ acct-port <number> ] [ via-vpn-tunnel ]
+	if (/^(security-object \S+ security aaa radius-server (accounting )?(primary|backup(1|2|3)) \S+ shared-secret )\S+ (\S+.*)?$/ &&  $filter_pwds >= 2) {
+		ProcessHistory("","","","!$1<removed> $5\n");
 		next;
 	}
 
-	# admin <(root-admin|read-write|read-only)> <username> password <password>
+	# admin root-admin <string> password <string>
+	# admin {read-write|read-only} <string> password <string>
 	if(/^(admin (root-admin|read-write|read-only) \S+ password )\S+\s?$/ && $filter_pwds >= 2) {
 		ProcessHistory("","","","!$1<removed>\n");
 		next;
 	}
+
+	# security-object <string> security protocol-suite wep-open <number> {hex-key|ascii-key} <string> [ default ]
+	# security-object <string> security protocol-suite wep-shared <number> {hex-key|ascii-key} <string> [ default ]
+	# security-object <string> security protocol-suite wpa-auto-psk {hex-key|ascii-key} <string> [ rekey-period <number> ] \
+	#    [ {non-strict|strict} ] [ gmk-rekey-period <number> ] [ ptk-timeout <number> ] \
+	#    [ ptk-retry <number> ] [ gtk-timeout <number> ] [ gtk-retry <number> ] [ ptk-rekey-period <number> ]
+	# security-object <string> security protocol-suite wpa2-aes-psk {hex-key|ascii-key} <string> [ rekey-period <number> ] \
+	#    [ {non-strict|strict} ] [ gmk-rekey-period <number> ] [ ptk-timeout <number> ] \
+	#    [ ptk-retry <number> ] [ gtk-timeout <number> ] [ gtk-retry <number> ] [ ptk-rekey-period <number> ]
+	# security-object <string> security protocol-suite wpa2-tkip-psk {hex-key|ascii-key} <string> [ rekey-period <number> ] \
+	#    [ {non-strict|strict} ] [ gmk-rekey-period <number> ] [ ptk-timeout <number> ] \
+	#    [ ptk-retry <number> ] [ gtk-timeout <number> ] [ gtk-retry <number> ] [ ptk-rekey-period <number> ]
 
 	# security-object <object> security protocol-suite wpa2-aes-psk hex-key <hexkey>
 	# wpa-auto-psk & wpa2-tkip-psk syntax not tested
@@ -229,11 +256,15 @@ sub WriteTerm {
 		next;
 	}
 
+	# capwap client dtls hm-defined-passphrase <string> key-id <number>
+
 	# capwap client dtls hm-defined-passphrase <passphrase> key-id <id>
 	if(/^(capwap client dtls hm-defined-passphrase )\S+( key-id (\S+))\s?$/ && $filter_pwds >= 2) {
 		ProcessHistory("","","","!$1<removed>$2\n");
 		next;
 	}
+
+	# application reporting upload <url> time-window <number> [ admin <string> password <string> {basic|digest} ]
 
 	# application reporting upload <url> time-window <numeric> admin <user> password <password> (<basic|digest>)
 	# basic is base64 so reversable, digest should be md5 hashed
@@ -242,6 +273,13 @@ sub WriteTerm {
 		ProcessHistory("","","","!$1<removed> $2\n");
 		next;
 	}
+
+	# mobility-policy <string> inxp gre-tunnel from <ip_addr/netmask> password <string>
+	# mobility-policy <string> inxp gre-tunnel from ipv6 <ipv6_addr/mask> password <string>
+	# mobility-policy <string> inxp gre-tunnel to <ip_addr> <ip_addr> password <string>
+	# mobility-policy <string> inxp gre-tunnel to <ip_addr> password <string>
+	# mobility-policy <string> inxp gre-tunnel to ipv6 <ipv6_addr> <ipv6_addr> password <string>
+	# mobility-policy <string> inxp gre-tunnel to ipv6 <ipv6_addr> password <string>
 
 	# mobility-policy <tunnelname> inxp gre-tunnel to <ipaddr> <ipaddr>? password <password>
 	# mobility-policy <tunnelname> inxp gre-tunnel to ipv6 <ipv6addr> <ipv6addr>? password <password>
@@ -252,9 +290,7 @@ sub WriteTerm {
 		next;
 	}
 
-
-	# ppsk users are in this format:
-	# user <username> password <password>
+	# user <string> password <string>
 	# username can contain spaces but then it will be quoted:
 	# user "my username" password 2yB3FLs3tv20oybmIBrt7VzGePrDqEaUdKW0p
 	if(/^(user .*? password )\S+\s?$/ && $filter_pwds >= 1) {
@@ -262,25 +298,22 @@ sub WriteTerm {
 		next;
 	}
 
-	# order/prune snmp statements
-	# we only prune lines of the form
-	# snmp-server host <ip> traps version 2c <community>
-#	if (/^(snmp-server host (\d+\.\d+\.\d+\.\d+) traps.* )(\S+)$/) {
-#            if ($filter_commstr) {
-#                ProcessHistory("SNMPTRAPHOST","ipsort","$2","! $1<removed>\n");
-#            } else {
-#                ProcessHistory("SNMPTRAPHOST","ipsort","$2","$_");
-#            }
-#            next;
-#	}
+	# prune snmp statements
+
+	# snmp trap-host {v1|v2c} <ip_addr|string_64> [ port <number> ] [ {via-vpn-tunnel} ] [ community <string> ]
+
+	# snmp trap-host {v3} <ip_addr|string_64> [ port <number> ] [ {via-vpn-tunnel} ] admin <string>
+	# snmp trap-host {v3} admin <string> auth {md5|sha} password <string> [ encryption {aes|aes128|des} password <string> ]
+
+	# snmp reader version {v1|v2c|any} community <string> [ <string> ]
 
 	# snmp reader version <(any|v1|v2c)> community <community> <string>
-	# snmp reader version v3 admin <username>
-	# snmp reader version v3 admin <username> auth (<md5|sha>) password <password> encryption <(des|aes|aes128)> password <password>
 	if (/^(snmp reader version (any|v1|v2c) community )\S+ (\S+)$/ && $filter_commstr) {
 		ProcessHistory("","","","!$1<removed> $3\n");
 		next;
 	}
+
+	# snmp reader version v3 admin <string> [ auth {md5|sha} password <string> ] [ encryption {aes|aes128|des} password <string> ]
 
 	# catch anything that wasnt matched above.
 	ProcessHistory("","","","$_");
@@ -291,7 +324,7 @@ sub WriteTerm {
 
     # hiveos lacks a definitive "end of config" marker.  If we have seen at least
     # 5 lines of write term output, we can be reasonably sure that we have the config.
-    if ($linecnt > 5) { 
+    if ($linecnt > 5) {
         $found_end = 1;
     }
 
