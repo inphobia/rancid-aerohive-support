@@ -1,4 +1,6 @@
 3.99.99
+	ahlogin, hiveos.pm: add support for aerohive hiveos access points
+
 	ulogin: parse (ignore) last (failed) login message at login time
 
 3.8
