@@ -27,9 +27,6 @@ package hiveos;
 # NOCOMMSTR:
 #   done for v2 reader 
 #   not done for traps & version v3
-
-# passwd todo:
-#   security-object AquafinGeneral security aaa radius-server primary 
 #   security-object AquafinGeneral security aaa radius-server accounting backup1
 
 
@@ -155,6 +152,10 @@ sub WriteTerm {
 
 	# security-object <object> security aaa radius-server <(primary|backup(1|2|3))> <(ip|ipv6|string)> shared-secret <key>
 	# security-object <object> security aaa radius-server accounting <(primary|backup(1|2|3))> <(ip|ipv6|string)> shared-secret <key>
+	if (/^(security-object \S+ security aaa radius-server (accounting )?(primary|backup(1|2|3)) \S+ shared-secret )\S+\s?$/ &&  $filter_pwds >= 2) {
+		ProcessHistory("","","","!$1<removed>\n");
+		next;
+	}
 
 	# admin <(root-admin|read-write|read-only)> <username> password <password>
 	if(/^(admin (root-admin|read-write|read-only) \S+ password )\S+\s?$/ && $filter_pwds >= 2) {
