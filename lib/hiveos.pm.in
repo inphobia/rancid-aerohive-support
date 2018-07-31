@@ -109,7 +109,7 @@ TOP: while(<$INPUT>) {
 }
 
 
-# This routine parses "show version"
+# This routine parses "show version" and "show hw-info"
 sub ShowVersion {
     my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In ShowVersion: $_" if ($debug);
@@ -119,9 +119,59 @@ sub ShowVersion {
 	last if (/^$prompt/);
 	next if (/^(Copyright|Aerohive)/);
 	next if (/^Uptime:/);
-	next if (/^\s+\^$/);
+	next if (/Aerohive hardware key/);	# seems to be not parsable/binary so skip
+	next if (/^\s*$/);
 
-	ProcessHistory("COMMENTS","","","! $_");
+	ProcessHistory("COMMENTS","","","!ver: $_");
+    }
+    ProcessHistory("COMMENTS","","","!\n");
+    return 0;
+}
+
+# This routine parses "show boot-param"
+sub ShowBoot {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowBoot: $_" if ($debug);
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	last if (/^$prompt/);
+	next if (/^boot parameters:/);
+	next if (/^\s*$/);
+
+	ProcessHistory("COMMENTS","","","!boot-param: $_");
+    }
+    ProcessHistory("COMMENTS","","","!\n");
+    return 0;
+}
+
+# This routine parses "show idm"
+sub ShowIDManager {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowIDManager: $_" if ($debug);
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	last if (/^$prompt/);
+	next if (/^\s*$/);
+
+	ProcessHistory("COMMENTS","","","!id-manager: $_");
+    }
+    ProcessHistory("COMMENTS","","","!\n");
+    return 0;
+}
+
+# This routine parses "show license"
+sub ShowLicense {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowLicense: $_" if ($debug);
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	last if (/^$prompt/);
+	next if (/^\s*$/);
+
+	ProcessHistory("COMMENTS","","","!license: $_");
     }
     ProcessHistory("COMMENTS","","","!\n");
     return 0;
@@ -138,7 +188,7 @@ sub WriteTerm {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
-	next if (/^\s+\^$/);
+	next if (/^\s*$/);
 	$linecnt++;
 
 	# filter passwords
@@ -184,6 +234,16 @@ sub WriteTerm {
 		ProcessHistory("","","","!$1<removed> $2\n");
 		next;
 	}
+
+	# mobility-policy <tunnelname> inxp gre-tunnel to <ipaddr> <ipaddr>? password <password>
+	# mobility-policy <tunnelname> inxp gre-tunnel to ipv6 <ipv6addr> <ipv6addr>? password <password>
+	# mobility-policy <tunnelname> inxp gre-tunnel from <iprange> password <password>
+	# mobility-policy <tunnelname> inxp gre-tunnel from ipv6 <ipv6range> password <password>
+	if(/^(mobility-policy \S+ inxp gre-tunnel (to|from) (ipv6 )?\S+ (\S+ )?password )\S+\s?$/ && $filter_pwds >= 2) {
+		ProcessHistory("","","","!$1<removed>\n");
+		next;
+	}
+
 
 	# ppsk users are in this format:
 	# user <username> password <password>
