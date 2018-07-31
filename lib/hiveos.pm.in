@@ -117,10 +117,10 @@ sub ShowVersion {
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
-	next if (/^(Copyright|Aerohive)/);
-	next if (/^Uptime:/);
-	next if (/Aerohive hardware key/);	# seems to be not parsable/binary so skip
-	next if (/^\s*$/);
+	next if (/^(\s*|\s*$cmd\s*)$/);
+	next if (/^(Copyright|Uptime|Aerohive (Networks|hardware))/);
+
+	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
 
 	ProcessHistory("COMMENTS","","","!ver: $_");
     }
@@ -136,8 +136,10 @@ sub ShowBoot {
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
+	next if (/^(\s*|\s*$cmd\s*)$/);
 	next if (/^boot parameters:/);
-	next if (/^\s*$/);
+
+	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
 
 	ProcessHistory("COMMENTS","","","!boot-param: $_");
     }
@@ -153,7 +155,9 @@ sub ShowIDManager {
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
-	next if (/^\s*$/);
+	next if (/^(\s*|\s*$cmd\s*)$/);
+
+	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
 
 	ProcessHistory("COMMENTS","","","!id-manager: $_");
     }
@@ -169,7 +173,9 @@ sub ShowLicense {
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
-	next if (/^\s*$/);
+	next if (/^(\s*|\s*$cmd\s*)$/);
+
+	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
 
 	ProcessHistory("COMMENTS","","","!license: $_");
     }
@@ -188,7 +194,9 @@ sub WriteTerm {
 	tr/\015//d;
 	last if (/^$prompt/);
 	next if (/^(\s*|\s*$cmd\s*)$/);
-	next if (/^\s*$/);
+
+	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
+
 	$linecnt++;
 
 	# filter passwords
