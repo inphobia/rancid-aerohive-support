@@ -482,7 +482,7 @@ hiveos;inloop;hiveos::inloop
 #hiveos;command;hiveos::ShowLicense;show license
 hiveos;command;hiveos::ShowVersion;show version
 hiveos;command;hiveos::WriteTerm;show running-config password
-#hiveos;command;hiveos::WriteTerm;show running-config users password
+hiveos;command;hiveos::WriteTerm;show running-config users password
 #
 # HP Procurve switch such as the 2524, 4108 or J9086A (aka. 2610) procurve 
 # switches, J9091A, and J8698A.  

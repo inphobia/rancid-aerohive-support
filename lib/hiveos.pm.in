@@ -128,6 +128,7 @@ sub ShowVersion {
 }
 
 # This routine parses "show running-config password"
+# and "show running-config users password"
 sub WriteTerm {
     my($INPUT, $OUTPUT, $cmd) = @_;
     my $linecnt = 0;
@@ -181,6 +182,15 @@ sub WriteTerm {
 	if(/^(application reporting upload \S+ time-window \d+ admin \S+ password )\S+ (\S+)\s?$/ &&
 		(($filter_pwds >= 1 && $2 eq "basic") || $filter_pwds >= 2)) {
 		ProcessHistory("","","","!$1<removed> $2\n");
+		next;
+	}
+
+	# ppsk users are in this format:
+	# user <username> password <password>
+	# username can contain spaces but then it will be quoted:
+	# user "my username" password 2yB3FLs3tv20oybmIBrt7VzGePrDqEaUdKW0p
+	if(/^(user .*? password )\S+\s?$/ && $filter_pwds >= 1) {
+		ProcessHistory("","","","!$1<removed>\n");
 		next;
 	}
 
