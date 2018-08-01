@@ -120,7 +120,7 @@ sub ShowVersion {
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
 	/^\s+\^-- Ambiguous input\s+$/ && return(1);
-	/^ERROR: login user is not super user/ && return(1);
+	/^ERROR: / && return(1);
 
 	ProcessHistory("COMMENTS","","","!ver: $_");
     }
@@ -141,7 +141,7 @@ sub ShowBoot {
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
 	/^\s+\^-- Ambiguous input\s+$/ && return(1);
-	/^ERROR: login user is not super user/ && return(1);
+	/^ERROR: / && return(1);
 
 	ProcessHistory("COMMENTS","","","!boot-param: $_");
     }
@@ -161,7 +161,7 @@ sub ShowIDManager {
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
 	/^\s+\^-- Ambiguous input\s+$/ && return(1);
-	/^ERROR: login user is not super user/ && return(1);
+	/^ERROR: / && return(1);
 
 	ProcessHistory("COMMENTS","","","!id-manager: $_");
     }
@@ -181,7 +181,7 @@ sub ShowLicense {
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
 	/^\s+\^-- Ambiguous input\s+$/ && return(1);
-	/^ERROR: login user is not super user/ && return(1);
+	/^ERROR: / && return(1);
 
 	ProcessHistory("COMMENTS","","","!license: $_");
     }
@@ -203,14 +203,16 @@ sub WriteTerm {
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
 	/^\s+\^-- Ambiguous input\s+$/ && return(1);
-	/^ERROR: login user is not super user/ && return(1);
+	/^ERROR: / && return(1);
 
 	$linecnt++;
 
 	# XXX hiveos likes to add single spaces behind some config lines. this mostly happens
-	# when the command is not using all possible flags/options, but sometimes also on
-	# complete commands ("admin root-admin ..." for example). keep this in mind when using regular
-	# expressions and testing for EOL, checking for a trailing space with \s? at the end is advised.
+	# when the command is not using all possible flags/options, but sometimes also on complete
+	# commands ("admin root-admin ..." for example). keep this in mind when using regular
+	# expressions and testing for EOL, checking for a trailing space with \s? at the end is
+	# advised. this is seems inherent to how hiveos deals with its config, since it is also
+	# present when saving the config via scp.
 	# on the plus side, is does make sure the arguments will always be in a fixed order.
 
 	# filter passwords
@@ -239,6 +241,9 @@ sub WriteTerm {
 
 	# security-object <string> security protocol-suite wep-open <number> {hex-key|ascii-key} <string> [ default ]
 	# security-object <string> security protocol-suite wep-shared <number> {hex-key|ascii-key} <string> [ default ]
+	#
+
+
 	# security-object <string> security protocol-suite wpa-auto-psk {hex-key|ascii-key} <string> [ rekey-period <number> ] \
 	#    [ {non-strict|strict} ] [ gmk-rekey-period <number> ] [ ptk-timeout <number> ] \
 	#    [ ptk-retry <number> ] [ gtk-timeout <number> ] [ gtk-retry <number> ] [ ptk-rekey-period <number> ]
@@ -248,25 +253,18 @@ sub WriteTerm {
 	# security-object <string> security protocol-suite wpa2-tkip-psk {hex-key|ascii-key} <string> [ rekey-period <number> ] \
 	#    [ {non-strict|strict} ] [ gmk-rekey-period <number> ] [ ptk-timeout <number> ] \
 	#    [ ptk-retry <number> ] [ gtk-timeout <number> ] [ gtk-retry <number> ] [ ptk-rekey-period <number> ]
-
-	# security-object <object> security protocol-suite wpa2-aes-psk hex-key <hexkey>
-	# wpa-auto-psk & wpa2-tkip-psk syntax not tested
-	if(/^(security-object \S+ security protocol-suite (wpa2-aes-psk|wpa-auto-psk|wpa2-tkip-psk) hex-key )\S+\s?$/ && $filter_pwds >= 1) {
-		ProcessHistory("","","","!$1<removed>\n");
+	if(/^(security-object \S+ security protocol-suite wpa(-auto|2-aes|2-tkip)-psk (hex|ascii)-key )\S+\s?(\S+.*)?$/ && $filter_pwds >= 1) {
+		ProcessHistory("","","","!$1<removed> $4\n");
 		next;
 	}
 
 	# capwap client dtls hm-defined-passphrase <string> key-id <number>
-
-	# capwap client dtls hm-defined-passphrase <passphrase> key-id <id>
 	if(/^(capwap client dtls hm-defined-passphrase )\S+( key-id (\S+))\s?$/ && $filter_pwds >= 2) {
 		ProcessHistory("","","","!$1<removed>$2\n");
 		next;
 	}
 
 	# application reporting upload <url> time-window <number> [ admin <string> password <string> {basic|digest} ]
-
-	# application reporting upload <url> time-window <numeric> admin <user> password <password> (<basic|digest>)
 	# basic is base64 so reversable, digest should be md5 hashed
 	if(/^(application reporting upload \S+ time-window \d+ admin \S+ password )\S+ (\S+)\s?$/ &&
 		(($filter_pwds >= 1 && $2 eq "basic") || $filter_pwds >= 2)) {
@@ -280,11 +278,6 @@ sub WriteTerm {
 	# mobility-policy <string> inxp gre-tunnel to <ip_addr> password <string>
 	# mobility-policy <string> inxp gre-tunnel to ipv6 <ipv6_addr> <ipv6_addr> password <string>
 	# mobility-policy <string> inxp gre-tunnel to ipv6 <ipv6_addr> password <string>
-
-	# mobility-policy <tunnelname> inxp gre-tunnel to <ipaddr> <ipaddr>? password <password>
-	# mobility-policy <tunnelname> inxp gre-tunnel to ipv6 <ipv6addr> <ipv6addr>? password <password>
-	# mobility-policy <tunnelname> inxp gre-tunnel from <iprange> password <password>
-	# mobility-policy <tunnelname> inxp gre-tunnel from ipv6 <ipv6range> password <password>
 	if(/^(mobility-policy \S+ inxp gre-tunnel (to|from) (ipv6 )?\S+ (\S+ )?password )\S+\s?$/ && $filter_pwds >= 2) {
 		ProcessHistory("","","","!$1<removed>\n");
 		next;
@@ -314,6 +307,8 @@ sub WriteTerm {
 	}
 
 	# snmp reader version v3 admin <string> [ auth {md5|sha} password <string> ] [ encryption {aes|aes128|des} password <string> ]
+#	/^(snmp reader version v3 admin \S+)( auth (md5|sha) password \S+)?( encryption (aes|aes128|des) password \S+)?/
+
 
 	# catch anything that wasnt matched above.
 	ProcessHistory("","","","$_");
