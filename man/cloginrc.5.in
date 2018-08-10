@@ -8,6 +8,7 @@
 .SH DESCRIPTION
 .B .cloginrc
 contains configuration information for
+.BR ahlogin (1),
 .BR alogin (1),
 .BR blogin (1),
 .BR clogin (1),
