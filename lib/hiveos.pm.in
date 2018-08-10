@@ -149,6 +149,28 @@ sub ShowBoot {
     return 0;
 }
 
+# This routine parses "show capwap client"
+sub ShowCapWap {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowCapWap: $_" if ($debug);
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	last if (/^$prompt/);
+	next if (/^(\s*|\s*$cmd\s*)$/);
+	next if (/^(max )?(retransmit|discovery) count:/i);
+	next if (/(tries|Keepalives|drop)/);
+
+	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
+	/^\s+\^-- Ambiguous input\s+$/ && return(1);
+	/^ERROR: / && return(1);
+
+	ProcessHistory("COMMENTS","","","!capwap: $_");
+    }
+    ProcessHistory("COMMENTS","","","!\n");
+    return 0;
+}
+
 # This routine parses "show idm"
 sub ShowIDManager {
     my($INPUT, $OUTPUT, $cmd) = @_;
@@ -299,9 +321,7 @@ sub WriteTerm {
 	# snmp trap-host {v3} admin <string> auth {md5|sha} password <string> [ encryption {aes|aes128|des} password <string> ]
 
 	# snmp reader version {v1|v2c|any} community <string> [ <string> ]
-
-	# snmp reader version <(any|v1|v2c)> community <community> <string>
-	if (/^(snmp reader version (any|v1|v2c) community )\S+ (\S+)$/ && $filter_commstr) {
+	if (/^(snmp reader version (any|v1|v2c) community )\S+ (\S+)?$/ && $filter_commstr) {
 		ProcessHistory("","","","!$1<removed> $3\n");
 		next;
 	}

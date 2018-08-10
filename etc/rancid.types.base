@@ -480,8 +480,9 @@ hiveos;inloop;hiveos::inloop
 hiveos;command;hiveos::ShowVersion;show version
 hiveos;command;hiveos::ShowVersion;show hw-info
 hiveos;command;hiveos::ShowBoot;show boot-param
-hiveos;command;hiveos::ShowIDManager;show idm
 hiveos;command;hiveos::ShowLicense;show license
+hiveos;command;hiveos::ShowCapWap;show capwap client
+hiveos;command;hiveos::ShowIDManager;show idm
 hiveos;command;hiveos::WriteTerm;show running-config password
 hiveos;command;hiveos::WriteTerm;show running-config users password
 #
