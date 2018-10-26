@@ -446,7 +446,7 @@ a10login: $(top_builddir)/config.status $(srcdir)/a10login.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 agmrancid: $(top_builddir)/config.status $(srcdir)/agmrancid.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-ahrancid: $(top_builddir)/config.status $(srcdir)/ahrancid.in
+ahlogin: $(top_builddir)/config.status $(srcdir)/ahlogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 alogin: $(top_builddir)/config.status $(srcdir)/alogin.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
