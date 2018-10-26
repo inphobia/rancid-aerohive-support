@@ -2,6 +2,7 @@
 Makefile
 a10login
 agmrancid
+ahlogin
 alogin
 anlogin
 arancid
@@ -22,7 +23,6 @@ f10rancid
 f5rancid
 flogin
 fnlogin
-fnrancid
 fxlogin
 hlogin
 hpuifilter

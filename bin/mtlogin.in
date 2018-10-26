@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: mtlogin.in 3633 2017-04-13 17:23:17Z heas $
+## $Id: mtlogin.in 3912 2018-10-24 22:26:50Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -181,28 +181,35 @@ proc login { router user userpswd passwd prompt cmethod cyphertype identfile } {
 
 # Run commands given on the command line.
 proc run_commands { prompt command } {
-    global in_proc
+    global do_interact in_proc
     set in_proc 1
 
     # escape any parens in the prompt, such as "(enable)"
     regsub -all "\[)(]" $prompt {\\&} reprompt
 
     # handle escaped ;s in commands, and ;; and ^;
-    regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-    regsub {^;} $esccommand "\u002;" command
-    set sep "\\1\u001"
-    regsub -all {([^\\])\;} $command "$sep" esccommand
-    set sep "\u001"
+    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+    regsub {^;} $command "\u002;" esccommand
+    regsub -all {[\\];} $esccommand ";" command
+    regsub -all {\u002;} $command "\u002" esccommand
+    set sep "\u002"
     set commands [split $esccommand $sep]
     set num_commands [llength $commands]
     for {set i 0} {$i < $num_commands} { incr i} {
-	send -- "[subst -nocommands [lindex $commands $i]]\r"
+	send -h -- "[subst -nocommands [lindex $commands $i]]\r"
 	expect {
 	    -re "^\[^\n\r]*$reprompt"		{}
 	    -re "^\[^\n\r ]*>>.*$reprompt"	{ exp_continue }
 	    -re "\[\n\r]+"			{ exp_continue }
 	}
     }
+
+    if { $do_interact == 1 } {
+	interact
+	return 0
+    }
+
     send "quit\r"
     expect {
 	-re "^WARNING: There are unsaved configuration changes." {

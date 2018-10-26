@@ -1,6 +1,6 @@
 package exos;
 ##
-## $Id: exos.pm.in 3399 2016-05-24 11:36:20Z heas $
+## $Id: exos.pm.in 3878 2018-09-07 18:27:48Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@

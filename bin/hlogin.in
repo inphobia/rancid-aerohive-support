@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: hlogin.in 3725 2017-08-02 17:14:49Z heas $
+## $Id: hlogin.in 3912 2018-10-24 22:26:50Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -251,30 +251,30 @@ proc do_enable { enauser enapasswd } {
 
 # Run commands given on the command line.
 proc run_commands { prompt command } {
-    global do_saveconfig in_proc
+    global do_interact do_saveconfig in_proc
     set in_proc 1
 
     # Escape regex meta characters in the $prompt
     # match cisco config mode prompts too, such as router(config-if)#
-    regsub -all {^(.{1,11}).*([#>] ?)$} $prompt {\1} reprompt
-    # escape any parens in the prompt, such as "(enable)"
-    regsub -all {[)(]} $reprompt {\\&} reprompt
+    regsub -lineanchor -- {^(.{1,11}).*([#>] ?)$} $prompt {\1} reprompt
+    regsub -all -- {[\\]$} $reprompt {} reprompt
     append reprompt {([^#>\r\n]+)?[#>](\\([^)\\r\\n]+\\))?}
     # this is the only way i see to get rid of more prompts in o/p..grrrrr
     log_user 0
 
     # handle escaped ;s in commands, and ;; and ^;
-    regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-    regsub {^;} $esccommand "\u002;" command
-    set sep "\\1\u001"
-    regsub -all {([^\\])\;} $command "$sep" esccommand
-    set sep "\u001"
+    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+    regsub {^;} $command "\u002;" esccommand
+    regsub -all {[\\];} $esccommand ";" command
+    regsub -all {\u002;} $command "\u002" esccommand
+    set sep "\u002"
     set commands [split $esccommand $sep]
     set num_commands [llength $commands]
     # if the pager can not be turned off, we have to look for the "More"
     # prompt.
     for {set i 0} {$i < $num_commands} { incr i} {
-	send -- "[subst -nocommands [lindex $commands $i]]\r"
+	send -h -- "[subst -nocommands [lindex $commands $i]]\r"
 	expect {
 	    -re "^\[^\n\r *]*$reprompt"	{ catch {send_user -- "$expect_out(buffer)"} }
 	    -re "^\[^\n\r]*$reprompt "	{ catch {send_user -- "$expect_out(buffer)"} }
@@ -292,6 +292,8 @@ proc run_commands { prompt command } {
 					  }
 					  exp_continue
 					}
+	    -re "^More: \[^\n\r]* line:" { catch {send " "}
+					  exp_continue }
 	    -re "^<-+ More -+>\[^\n\r]*" { catch {send " "}
 					  exp_continue }
 	    -re "^-+ MORE -+\[^\n\r]*"	{ catch {send " "}
@@ -309,6 +311,12 @@ proc run_commands { prompt command } {
 	}
     }
     log_user 1
+
+    if { $do_interact == 1 } {
+	interact
+	return 0
+    }
+
     send -h "logout\r"
     expect {
 	-re "Do you want to save (the )?current configuration"	{
@@ -523,7 +531,9 @@ foreach router [lrange $argv $i end] {
 	send "\r"
 	expect {
 	    -re "\[\r\n]+"	{ exp_continue; }
-	    -re "^.+$prompt"	{ set prompt $expect_out(0,string); }
+	    -re "^.+$prompt"	{ set junk $expect_out(0,string);
+				  regsub -all "\[\]\[\(\)+]" $junk {\\&} prompt;
+				}
 	}
 	# set a wide tty width.
 	set stty_init "cols 132"

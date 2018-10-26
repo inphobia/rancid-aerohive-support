@@ -1,6 +1,82 @@
 3.99.99
 	ahlogin, hiveos.pm: add support for aerohive hiveos access points
 
+	*login: address bug in escaping empty commands of -[cx]
+
+	sros.pm: use file type debug command only for total memory and card type
+
+	panlogin: copy/customize last/failed login match from clogin
+
+	fnlogin: accept new banner prompt at login - Ni Ne
+
+	ciscowlc.pm: the device may not echo the \r\n at logout
+
+	fss2: filter sys-uptime
+
+	anlogin, jlogin, noklogin: use spawnopts spawning ssh/telnet
+
+	nxos.pm: GC unused variables
+
+	fortigate: rename fortigate device type to fortigate-full and re-create
+	the fortigate type with 'show' (not 'full-configuration')
+
+	anlogin: use login_top
+
+	sros.pm: take chassis type and s/n from show chassis instead of boot.log
+
+	noklogin: remove ^H handling; its consuming too much
+
+	arbor.pm: increase anlogin timeout for slow cli commands
+
+	noklogin: allocate a pty if not on a tty & set term width
+
+	iosxr: DirSlotN(): drop fileno from oscillating files to ignore the
+	rotation by renaming behavior seen with ce_switch.log and sort all
+	files by filename
+
+	iosxr: also ignore ce_switch.log*
+
+	*login: add -i option
+
+	arcos.pm: initial arcos support - WIP
+
+	anlogin: copy last/failed login match from clogin
+
+	nxos.pm: also ignore accounting_log.0 - Pavel Korovin
+
+	srancid: prevent ShowSys() power supply handling from consuming too much
+
+	fortigate: filter INDUSTRIAL-DB version - Chris Wopat
+
+	nxos.pm: filter out oscillating data from transceivers - Pavel Korovin
+
+	fortigate: wrap other DB signatures within FILTER_OSC
+
+	hlogin: allow prompts with ()s, still not a good idea imo
+
+	fxlogin: missing escape in regex - Erik Muller
+
+	wavesvros.pm: add cmds license file list, blade show, & alarm show
+
+	fortigate.pm: GC unnecessary output spacers & fix comment character -
+	Nick Nauwelaerts
+
+	fnlogin: fix logout sequence in run_commands() & used -h option of send
+
+	fnrancid, fortigate.pm: convert fortigate to module
+
+	waverserver.pm: filter power support wattage, new in waveserveros 1.6
+
+	nxos.pm: in ShowEnvTemp() sub-input loop, catch prompt - Scott McInness
+
+	jlogin: skip login tips that look like prompts, like:
+	JUNOS tip:
+	Use the configuration statement [system login class <name> login-tip]
+
+	rancid.conf.sample: note ALL option FILTER_OSC
+
+	fnrancid: filter db version stamps wrapped in FILTER_OSC - Chris Wopat
+
 	ulogin: parse (ignore) last (failed) login message at login time
 
 3.8

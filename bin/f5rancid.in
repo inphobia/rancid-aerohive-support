@@ -1,6 +1,6 @@
 #! @PERLV_PATH@
 ##
-## $Id: f5rancid.in 3763 2018-02-02 19:38:21Z heas $
+## $Id: f5rancid.in 3883 2018-09-07 21:49:08Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 ## Copyright (c) @COPYYEARS@ by Henry Kilmer and John Heasley
@@ -190,6 +190,12 @@ sub ShowBaseRun {
 
 	if (!$line++) {
 	    ProcessHistory("SHOWBASE","","","#\n#base:\n");
+	}
+	# filter oscillating "password crypt", "auth password crypt",
+	# "privacy password crypt"
+	if (/(password crypt) / && $filter_pwds >= 1) {
+	    ProcessHistory("LINE-PASS","","","# $`$1 <removed>\n");
+	    next;
 	}
 	if (/(auth-password-encrypted )\S+/) {
 	    ProcessHistory("SHOWBASE","","","# $1 <removed>");

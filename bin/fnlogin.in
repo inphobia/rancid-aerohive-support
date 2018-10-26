@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: fnlogin.in 3784 2018-04-03 14:36:08Z heas $
+## $Id: fnlogin.in 3912 2018-10-24 22:26:50Z heas $
 ## patched to accomplish fortinet from nlogin
 ## by: Daniel G. Epstein <dan at rootlike.com>
 ## adapted by: Diego Ercolani <diego.ercolani at ssis.sm>
@@ -22,7 +22,7 @@
 # XXX need to import login_top.
 
 # Usage line
-set usage "Usage: $argv0 \[-dSV\] \[-c command\] \[-Evar=x\] \
+set usage "Usage: $argv0 \[-diSV\] \[-c command\] \[-Evar=x\] \
 \[-f cloginrc-file\] \[-p user-password\] \
 \[-s script-file\] \[-t timeout\] \[-u username\] \
 \[-v vty-password\] \[-x command-file\] \
@@ -35,6 +35,7 @@ set usage "Usage: $argv0 \[-dSV\] \[-c command\] \[-Evar=x\] \
 set password_file $env(HOME)/.cloginrc
 # Default is to login to the firewall
 set do_command 0
+set do_interact 0
 set do_script 0
 # The default is to look in the password file to find the passwords.  This
 # tracks if we receive them on the command line.
@@ -95,6 +96,9 @@ for {set i 0} {$i < $argc} {incr i} {
 	    set do_cloginrcdbg 1
 	} -M* {
 	    set do_cloginrcdbg 2
+	# interactive
+	} -i* {
+	    set do_interact 1
 	# VTY Password
 	} -p* {
 	    if {! [  regexp .\[pP\](.+) $arg ignore userpasswd]} {
@@ -463,6 +467,11 @@ proc login { router user userpswd passwd enapasswd prompt cmethod cyphertype } {
 					  }
 					  exp_continue
 					}
+	-nocase "(press 'a' to accept):" {
+					  ### accept banner
+					  send "a\r"
+					  exp_continue
+					}
 	-- "$prompt"			{ break; }
      }
     }
@@ -472,42 +481,43 @@ proc login { router user userpswd passwd enapasswd prompt cmethod cyphertype } {
 
 # Run commands given on the command line.
 proc run_commands { prompt command } {
-    global in_proc
+    global do_interact in_proc
     set in_proc 1
 
     # handle escaped ;s in commands, and ;; and ^;
-    regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-    regsub {^;} $esccommand "\u002;" command
-    set sep "\\1\u001"
-    regsub -all {([^\\])\;} $command "$sep" esccommand
-    set sep "\u001"
+    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+    regsub {^;} $command "\u002;" esccommand
+    regsub -all {[\\];} $esccommand ";" command
+    regsub -all {\u002;} $command "\u002" esccommand
+    set sep "\u002"
     set commands [split $esccommand $sep]
     set num_commands [llength $commands]
     for {set i 0} {$i < $num_commands} { incr i} {
-	if { [lindex $commands $i] == "\u002" } {
-	    send -- "\r"
-	} else {
-	    send -- "[subst -nocommands [lindex $commands $i]]\r"
-	}
+	send -h -- "[subst -nocommands [lindex $commands $i]]\r"
 	expect {
-            -re "$prompt"			{
-						  sleep 0.5
-						}
-	    -gl "--More--"			{ send " "
+            -re "$prompt"			{ }
+	    -gl "--More--"			{ send -h " "
 						  exp_continue
 						}
 	    -re "\[\n\r]+"			{ exp_continue }
 	}
-     }
-     expect {
+    }
+
+    if { $do_interact == 1 } {
+	interact
+	return 0
+    }
+
+    send -h "exit\r"
+    expect {
 	-re "$prompt$"				{
-						  send "exit\r"
-						  sleep 0.5
+						  send -h "exit\r"
 						  exp_continue
 						}
 	-re "\[\n\r]+"				{ exp_continue }
 	-gl "Configuration modified, save?"	{
-						  send "n\r"
+						  send -h "n\r"
 						  exp_continue
 						}
 	timeout					{ catch {close}; catch {wait};

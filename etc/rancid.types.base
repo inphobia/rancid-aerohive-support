@@ -50,6 +50,13 @@ arbor;command;arbor::ShowVersion;system version
 arbor;command;arbor::ShowHardware;system hardware
 arbor;command;arbor::ShowConfig;config show
 #
+# Arrcus
+arcos;script;rancid -t arcos
+arcos;login;clogin
+arcos;module;arcos
+arcos;inloop;arcos::inloop
+#XXX arcos;command;arcos::ShowVersion;show version
+#
 arista;script;rancid -t arista
 arista;login;clogin
 arista;module;aeos
@@ -95,7 +102,10 @@ ciena-ws;timeout;120
 ciena-ws;module;wavesvros
 ciena-ws;inloop;wavesvros::inloop
 ciena-ws;command;wavesvros::ShowVersion;software show
+ciena-ws;command;wavesvros::GenericCmd;license file list
 ciena-ws;command;wavesvros::ShowChassis;chassis show
+ciena-ws;command;wavesvros::GenericCmd;blade show
+ciena-ws;command;wavesvros::GenericCmd;alarm show
 ciena-ws;command;wavesvros::WriteTerm;configuration show
 #
 # Cisco Catalyst 5k (all catalyst o/s switches)
@@ -398,8 +408,23 @@ bigip13;command;bigip::WriteTerm;list all-properties recursive
 force10;script;f10rancid
 force10;login;clogin
 #
-fortigate;script;fnrancid
+# Fortinet Fortigate firewall
+# Normal or FULL configuration
+fortigate;script;rancid -t fortigate
 fortigate;login;fnlogin
+fortigate;timeout;90
+fortigate;module;fortigate
+fortigate;inloop;fortigate::inloop
+fortigate;command;fortigate::GetSystem;get system status
+fortigate;command;fortigate::GetConf;show
+#
+fortigate-full;script;rancid -t fortigate
+fortigate-full;login;fnlogin
+fortigate-full;timeout;90
+fortigate-full;module;fortigate
+fortigate-full;inloop;fortigate::inloop
+fortigate-full;command;fortigate::GetSystem;get system status
+fortigate-full;command;fortigate::GetConf;show full-configuration
 #
 # Foundry and HP procurve OEMs of Foundry (Brocade ICX-6450s, HP9304M).
 # Reportedly functional on:

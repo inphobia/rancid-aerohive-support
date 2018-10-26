@@ -6151,7 +6151,7 @@ ac_config_files="$ac_config_files bin/f10rancid"
 
 ac_config_files="$ac_config_files bin/flogin"
 
-ac_config_files="$ac_config_files bin/fnlogin bin/fnrancid"
+ac_config_files="$ac_config_files bin/fnlogin"
 
 ac_config_files="$ac_config_files bin/fxlogin"
 
@@ -6949,8 +6949,8 @@ do
     "include/config.h") CONFIG_HEADERS="$CONFIG_HEADERS include/config.h" ;;
     "bin/login_top") CONFIG_FILES="$CONFIG_FILES bin/login_top" ;;
     "bin/a10login") CONFIG_FILES="$CONFIG_FILES bin/a10login" ;;
-    "bin/ahlogin") CONFIG_FILES="$CONFIG_FILES bin/ahlogin" ;;
     "bin/agmrancid") CONFIG_FILES="$CONFIG_FILES bin/agmrancid" ;;
+    "bin/ahlogin") CONFIG_FILES="$CONFIG_FILES bin/ahlogin" ;;
     "bin/alogin") CONFIG_FILES="$CONFIG_FILES bin/alogin" ;;
     "bin/arancid") CONFIG_FILES="$CONFIG_FILES bin/arancid" ;;
     "bin/anlogin") CONFIG_FILES="$CONFIG_FILES bin/anlogin" ;;
@@ -6970,7 +6970,6 @@ do
     "bin/f10rancid") CONFIG_FILES="$CONFIG_FILES bin/f10rancid" ;;
     "bin/flogin") CONFIG_FILES="$CONFIG_FILES bin/flogin" ;;
     "bin/fnlogin") CONFIG_FILES="$CONFIG_FILES bin/fnlogin" ;;
-    "bin/fnrancid") CONFIG_FILES="$CONFIG_FILES bin/fnrancid" ;;
     "bin/fxlogin") CONFIG_FILES="$CONFIG_FILES bin/fxlogin" ;;
     "bin/hlogin") CONFIG_FILES="$CONFIG_FILES bin/hlogin" ;;
     "bin/htlogin") CONFIG_FILES="$CONFIG_FILES bin/htlogin" ;;
@@ -7731,8 +7730,8 @@ See \`config.log' for more details" "$LINENO" 5; }
 }
  ;;
     "bin/a10login":F) chmod a+x $ac_file ;;
-    "bin/ahlogin":F) chmod a+x $ac_file ;;
     "bin/agmrancid":F) chmod a+x $ac_file ;;
+    "bin/ahlogin":F) chmod a+x $ac_file ;;
     "bin/alogin":F) chmod a+x $ac_file ;;
     "bin/arancid":F) chmod a+x $ac_file ;;
     "bin/anlogin":F) chmod a+x $ac_file ;;
@@ -7752,7 +7751,6 @@ See \`config.log' for more details" "$LINENO" 5; }
     "bin/f10rancid":F) chmod a+x $ac_file ;;
     "bin/flogin":F) chmod a+x $ac_file ;;
     "bin/fnlogin":F) chmod a+x $ac_file ;;
-    "bin/fnrancid":F) chmod a+x $ac_file ;;
     "bin/fxlogin":F) chmod a+x $ac_file ;;
     "bin/hlogin":F) chmod a+x $ac_file ;;
     "bin/htlogin":F) chmod a+x $ac_file ;;

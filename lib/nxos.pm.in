@@ -1,6 +1,6 @@
 package nxos;
 ##
-## $Id: nxos.pm.in 3843 2018-07-19 01:21:29Z heas $
+## $Id: nxos.pm.in 3901 2018-09-19 22:02:43Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -19,12 +19,6 @@ our @ISA = qw(Exporter);
 use rancid @VERSION@;
 
 our $proc;
-our $ios;
-our $found_version;
-our $found_env;
-our $found_diag;
-our $config_register;			# configuration register value
-
 our $type;				# device model, from ShowVersion
 
 our $C0;				# output formatting control
@@ -43,11 +37,6 @@ sub import {
 # post-open(collection file) initialization
 sub init {
     $proc = "";
-    $found_version = 0;
-    $found_env = 0;
-    $found_diag = 0;
-    $config_register = undef;		# configuration register value
-
     $type = undef;			# device model, from ShowVersion
 
     $C0 = 0;				# output formatting control
@@ -334,7 +323,7 @@ sub ShowEnvTemp {
 	return(-1) if (/\% Permission denied/);
 	return(-1) if (/command authorization failed/i);
 
-	s/ +$//;	# Drop trailing ' '
+	s/ +$//;	# Drop trailing spaces
 
 # Cut out CurTemp - drop the 2nd to last field.
 #--------------------------------------------------------------------
@@ -345,6 +334,8 @@ sub ShowEnvTemp {
 	if (/(control temperature|monitor temperature)/i) {
 	    ProcessHistory("COMMENTS","","","!Env: $_");
 	    while (<$INPUT>) {
+		tr/\015//d;
+		goto EndShowEnvTemp if (/^$prompt/);
 		if (/(.*\s+\d+\s+\d+\s+)(\d+)(.*$)/) {
 		    $_ = sprintf("%s%-". length($2)."s%s\n", $1, "", $3);
 		}
@@ -360,6 +351,7 @@ sub ShowEnvTemp {
 	    ProcessHistory("COMMENTS","","","!Env: $_");
 	}
     }
+EndShowEnvTemp:
     ProcessHistory("COMMENTS","","","!\n");
     return(0);
 }
@@ -496,8 +488,8 @@ sub DirSlotN {
 	# Drop bootvar_debug log files
 	/\s+bootvar_debug\./ && next;
 
-	# Drop accounting.log
-	/\s+accounting\.log$/ && next;
+	# Drop accounting.log*
+	/\s+accounting.log.*/ && next;
 
 	# Drop vtp_debug.log and vtp_debug_old.log CDETS bug CSCuy87611
 	/\s+vtp_debug(_old)?\.log$/ && next;
@@ -574,6 +566,9 @@ sub ShowIntTransceiver {
 	return(-1) if (/No token match at /);	# 1000v
 	return(-1) if (/\% Permission denied/);
 	return(-1) if (/command authorization failed/i);
+
+	# filter out oscillating data from transceivers
+	next if (/(Temperature|Current|Power|Voltage)\s+:/);
 
 	ProcessHistory("COMMENTS","","","!$_");
     }

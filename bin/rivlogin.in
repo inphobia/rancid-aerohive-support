@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: rivlogin.in 3633 2017-04-13 17:23:17Z heas $
+## $Id: rivlogin.in 3912 2018-10-24 22:26:50Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -15,7 +15,7 @@
 # Returned to the RANCID crowd by andrew fort
 
 # Usage line
-set usage "Error: Usage: $argv0 \[-dV\] \[-noenable\] \
+set usage "Error: Usage: $argv0 \[-diV\] \[-noenable\] \
 \[-f cloginrc-file\] \[-c command\] \[-Evar=x\] \[-s script-file\] \
 \[-x command-file\] \[-t timeout\] \[-o output-file\] \
 router \[router...\]\n"
@@ -49,6 +49,7 @@ set password_file $env(HOME)/.cloginrc
 
 # If no -c or -s specified, just automate router login ala rsh
 set do_command 0
+set do_interact 0
 set do_script  0
 set log_user   0
 
@@ -472,14 +473,15 @@ proc start_logfile { output_file } {
 }
 
 proc run_commands { prompt cmdstring } {
-    global sendstring
+    global do_interact sendstring
 
     # handle escaped ;s in commands, and ;; and ^;
-    regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-    regsub {^;} $esccommand "\u002;" command
-    set sep "\\1\u001"
-    regsub -all {([^\\])\;} $command "$sep" esccommand
-    set sep "\u001"
+    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+    regsub {^;} $command "\u002;" esccommand
+    regsub -all {[\\];} $esccommand ";" command
+    regsub -all {\u002;} $command "\u002" esccommand
+    set sep "\u002"
     set commands [split $esccommand $sep]
     set num_commands [llength $cmdstring]
 
@@ -491,6 +493,12 @@ proc run_commands { prompt cmdstring } {
 	    return 1
 	}
     }
+
+    if { $do_interact == 1 } {
+	interact
+	return 0
+    }
+
     return 0
 }
 

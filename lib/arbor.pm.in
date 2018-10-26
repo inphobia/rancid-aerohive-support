@@ -1,6 +1,6 @@
 package arbor;
 ##
-## $Id: arbor.pm.in 3729 2017-09-15 17:02:29Z heas $
+## $Id: arbor.pm.in 3892 2018-09-18 18:05:51Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -25,6 +25,8 @@ sub import {
     # force a terminal type so as not to confuse the POS with "network".
     # Seems that it might also support "dumb".
     $ENV{'TERM'} = "vt100";
+
+    $timeo = 240;			# anlogin timeout in seconds
 
     0;
 }

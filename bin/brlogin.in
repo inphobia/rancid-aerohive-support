@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: brlogin.in 3633 2017-04-13 17:23:17Z heas $
+## $Id: brlogin.in 3912 2018-10-24 22:26:50Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -64,11 +64,12 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype } {
 	    }
 
 	    # handle escaped ;s in commands, and ;; and ^;
-	    regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-	    regsub {^;} $esccommand "\u002;" command
-	    set sep "\\1\u001"
-	    regsub -all {([^\\])\;} $command "$sep" esccommand
-	    set sep "\u001"
+	    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+	    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+	    regsub {^;} $command "\u002;" esccommand
+	    regsub -all {[\\];} $esccommand ";" command
+	    regsub -all {\u002;} $command "\u002" esccommand
+	    set sep "\u002"
 	    set commands [split $esccommand $sep]
 	    set num_commands [llength $commands]
 	    set rshfail 0
@@ -316,7 +317,7 @@ proc do_enable { enauser enapasswd } {
 
 # Run commands given on the command line.
 proc run_commands { prompt command } {
-    global do_saveconfig in_proc platform
+    global do_interact do_saveconfig in_proc platform
     set in_proc 1
 
     # If the prompt is (enable), then we are on a switch and the
@@ -347,12 +348,12 @@ proc run_commands { prompt command } {
     log_user 0
 
     # handle escaped ;s in commands, and ;; and ^;
-    regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-    regsub {^;} $esccommand "\u002;" command
-    set sep "\\1\u001"
-    regsub -all {([^\\])\;} $command "$sep" esccommand
-    set sep "\u001"
-    set commands [split $esccommand $sep]
+    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+    regsub {^;} $command "\u002;" esccommand
+    regsub -all {[\\];} $esccommand ";" command
+    set sep "\u002;"
+    set commands [split $command $sep]
     set num_commands [llength $commands]
     # the pager can not be turned off on the PIX, so we have to look
     # for the "More" prompt.  the extreme is equally obnoxious, with a
@@ -391,6 +392,11 @@ proc run_commands { prompt command } {
 	}
     }
     log_user 1
+
+    if { $do_interact == 1 } {
+	interact
+	return 0
+    }
 
     if { [ string compare "extreme" "$platform" ] } {
 	send -h "exit\r"

@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: panlogin.in 3639 2017-04-13 21:05:56Z heas $
+## $Id: panlogin.in 3912 2018-10-24 22:26:50Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -81,7 +81,14 @@ proc login { router user userpswd passwd cmethod cyphertype identfile } {
 		continue;
 	    }
 
-	    set commands [split $command \;]
+	    # handle escaped ;s in commands, and ;; and ^;
+	    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+	    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+	    regsub {^;} $command "\u002;" esccommand
+	    regsub -all {[\\];} $esccommand ";" command
+	    regsub -all {\u002;} $command "\u002" esccommand
+	    set sep "\u002"
+	    set commands [split $esccommand $sep]
 	    set num_commands [llength $commands]
 	    set rshfail 0
 	    for {set i 0} {$i < $num_commands && !$rshfail} { incr i} {
@@ -240,6 +247,12 @@ proc login { router user userpswd passwd cmethod cyphertype identfile } {
 				  send_user "\nError: Check your passwd for $router\n"
 				  catch {close}; wait; return 1
 				}
+	-nocase -re "successful login:"	{
+				  exp_continue
+				}
+	-nocase -re "failed login:"	{
+				  exp_continue
+				}
 	"Login failed"		{
 				  send_user "\nError: Check your passwd for $router\n"
 				  return 1
@@ -296,7 +309,7 @@ proc login { router user userpswd passwd cmethod cyphertype identfile } {
 
 # Run commands given on the command line.
 proc run_commands { prompt command } {
-    global in_proc
+    global do_interact in_proc
     set in_proc 1
 
     #exp_internal 1
@@ -308,28 +321,29 @@ proc run_commands { prompt command } {
 
     expect *	; # throw away everything in the expect buffer
 
-    # Is this a multi-command?
-    if [ string match "*\;*" "$command" ] {
-	set commands [split $command \;]
-	set num_commands [llength $commands]
-	for {set i 0} {$i < $num_commands} { incr i} {
-	    set cmd [subst -nocommands [lindex $commands $i]]
-	    send "$cmd\r"
-	    expect {
-		-re "$cmd"	{}
-		-re "\[\n\r]+"			{ exp_continue }
-	    }
-	    # look for the next prompt
-	    expect "$reprompt"	{}
-	}
-    } else {
-	send "[subst -nocommands $command]\r"
+    # handle escaped ;s in commands, and ;; and ^;
+    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+    regsub {^;} $command "\u002;" esccommand
+    regsub -all {[\\];} $esccommand ";" command
+    regsub -all {\u002;} $command "\u002" esccommand
+    set sep "\u002"
+    set commands [split $esccommand $sep]
+    set num_commands [llength $commands]
+    for {set i 0} {$i < $num_commands} { incr i} {
+	send -h -- "[subst -nocommands [lindex $commands $i]]\r"
 	expect {
 		-re "^\[^\n\r]*$reprompt"	{}
 		-re "^\[^\n\r ]*>>.*$reprompt"	{ exp_continue }
 		-re "\[\n\r]+"			{ exp_continue }
 	}
     }
+
+    if { $do_interact == 1 } {
+	interact
+	return 0
+    }
+
     send "exit\r"
     expect {
 	"\n"					{ exp_continue }

@@ -210,6 +210,20 @@ A. As far as I know, CVS does not provide a way to remove directories.  First,
 	% rm -rf fubar CVS/fubar
 
 
+Q. I would like to place my git repository on a remote machine.  How do I do
+   that?
+A. We suggest that you configure git to push a clone to the remote.  That is,
+   create the rancid group as normally done, including running rancid-cvs(1).
+   Then add a push url to the existing origin.
+
+	% cd $BASEDIR/<group>
+	% git remote add <somename> <giturlofexistingremote>
+	% git remote set-url --add --push origin $CVSROOT/<group>
+	% git remote set-url --add --push origin <giturlofexistingremote>
+
+   http://www.shrubbery.net/pipermail/rancid-discuss/2018-August/010348.html
+
+
 Q. I would like to place my CVS repository on a remote machine.  How do I do
    that?
 A. Assuming that you're starting fresh, its quite simple.  Before running
@@ -242,8 +256,8 @@ Q. I have a (set of) device(s) on which collection fails.  How can I debug
    this?
 A. Our usual diagnostic procedure for this is:
    - Make sure that the appropriate *login (example: clogin for cisco) works.
-     This tests to make sure you don't have routing or firewall issues, DNS
-     or hostname errors, that your .cloginrc is correct, your banner does
+     Use these tests to make sure you don't have routing or firewall issues,
+     DNS or hostname errors, that your .cloginrc is correct, your banner does
      not have some character that *login does not like, and that the *login
      script doesn't have a bug of some sort.  For example:
 

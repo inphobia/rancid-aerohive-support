@@ -59,7 +59,6 @@ bin/
 	erancid.in	Version of rancid.in for ADC EZ-T3 muxes.
 	f10rancid.in	Version of rancid.in for Force10 routers.
 	f5rancid.in	Version of rancid.in for F5 BigIPs.
-	fnrancid.in	Version of rancid.in for Fortinet Firewalls.
 	hrancid.in	Version of rancid.in for HP Procurve switches.
 	htrancid.in	Version of rancid.in for Hitatchi routers.
 	jerancid.in	Version of rancid.in for Juniper E-series routers.
@@ -119,6 +118,7 @@ lib/
 	dell.pm.in	rancid library for some Dell D-Link models.
 	eos.pm.in	rancid library for Compass EOS.
 	exos.in		rancid library for Extreme switches.
+	fortigate.pm.in	rancid library for Fortinet Firewalls.
 	foundry.pm.in	rancid library for Foundry (Brocade) switches.
 	hiveos.pm.in	rancid library for aerohive hiveos access points.
 	ios.pm.in	rancid library for Cisco IOS and IOS-XE.

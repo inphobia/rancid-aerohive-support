@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: xilogin.in 3775 2018-03-22 16:57:04Z heas $
+## $Id: xilogin.in 3912 2018-10-24 22:26:50Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -14,10 +14,10 @@
 # XXX need to import login_top.
 
 # Usage line
-set usage "Usage: $argv0 \[-dSV\] \[-autoenable\] \[-noenable\] \[-c command\] \
-\[-Evar=x\] \[-e enable-password\] \[-f cloginrc-file\] \[-p user-password\] \
-\[-r passphrase\] \[-s script-file\] \[-t timeout\] \[-u username\] \
-\[-v vty-password\] \[-w enable-username\] \[-x command-file\] \
+set usage "Usage: $argv0 \[-diSV\] \[-autoenable\] \[-noenable\] \
+\[-c command\] \[-Evar=x\] \[-e enable-password\] \[-f cloginrc-file\] \
+\[-p user-password\] \[-r passphrase\] \[-s script-file\] \[-t timeout\] \
+\[-u username\] \[-v vty-password\] \[-w enable-username\] \[-x command-file\] \
 \[-y ssh_cypher_type\] router \[router...\]\n"
 
 # env(CLOGIN) may contain:
@@ -27,6 +27,7 @@ set usage "Usage: $argv0 \[-dSV\] \[-autoenable\] \[-noenable\] \[-c command\] \
 set password_file $env(HOME)/.cloginrc
 # Default is to login to the router
 set do_command 0
+set do_interact 0
 set do_script 0
 # The default is to automatically enable
 set avenable 1
@@ -89,6 +90,9 @@ for {set i 0} {$i < $argc} {incr i} {
 	    set do_cloginrcdbg 1
 	} -M* {
 	    set do_cloginrcdbg 2
+	# interactive
+	} -i* {
+	    set do_interact 1
 	# VTY Password
 	} -p* {
 	    if {! [regexp .\[pP\](.+) $arg ignore userpasswd]} {
@@ -376,11 +380,12 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
 	    }
 
 	    # handle escaped ;s in commands, and ;; and ^;
-	    regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-	    regsub {^;} $esccommand "\u002;" command
-	    set sep "\\1\u001"
-	    regsub -all {([^\\])\;} $command "$sep" esccommand
-	    set sep "\u001"
+	    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+	    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+	    regsub {^;} $command "\u002;" esccommand
+	    regsub -all {[\\];} $esccommand ";" command
+	    regsub -all {\u002;} $command "\u002" esccommand
+	    set sep "\u002"
 	    set commands [split $esccommand $sep]
 	    set num_commands [llength $commands]
 	    set rshfail 0
@@ -638,7 +643,7 @@ proc do_login { enauser enapasswd } {
 
 # Run commands given on the command line.
 proc run_commands { prompt command } {
-    global do_saveconfig in_proc
+    global do_interact do_saveconfig in_proc
     set in_proc 1
 
     # Disable paging
@@ -654,18 +659,19 @@ proc run_commands { prompt command } {
     log_user 0
 
     # handle escaped ;s in commands, and ;; and ^;
-    regsub -all {([^\\]);;} $command "\\1;\u002;" esccommand
-    regsub {^;} $esccommand "\u002;" command
-    set sep "\\1\u001"
-    regsub -all {([^\\])\;} $command "$sep" esccommand
-    set sep "\u001"
+    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
+    regsub {^;} $command "\u002;" esccommand
+    regsub -all {[\\];} $esccommand ";" command
+    regsub -all {\u002;} $command "\u002" esccommand
+    set sep "\u002"
     set commands [split $esccommand $sep]
     set num_commands [llength $commands]
     # the pager can not be turned off on the PIX, so we have to look
     # for the "More" prompt.  the extreme is equally obnoxious, with a
     # global switch in the config.
     for {set i 0} {$i < $num_commands} { incr i} {
-	send -- "[subst -nocommands [lindex $commands $i]]\r"
+	send -h -- "[subst -nocommands [lindex $commands $i]]\r"
 	expect {
 	    -re "\b+"				{ exp_continue }
 	    -re "^\[^\n\r *]*$reprompt"		{ send_user -- "$expect_out(buffer)"
@@ -683,6 +689,11 @@ proc run_commands { prompt command } {
 	}
     }
     log_user 1
+
+    if { $do_interact == 1 } {
+	interact
+	return 0
+    }
 
     send -h "quit\r"
     expect {
