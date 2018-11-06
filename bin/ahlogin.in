@@ -15,9 +15,9 @@
 # XXX need to import login_top.
 
 # Usage line
-set usage "Usage: $argv0 \[-dSV\] \[-autoenable\] \[-noenable\] \[-c command\] \
-\[-Evar=x\] \[-e enable-password\] \[-f cloginrc-file\] \[-p user-password\] \
-\[-r passphrase\] \[-s script-file\] \[-t timeout\] \[-u username\] \
+set usage "Usage: $argv0 \[-diSV\] \[-autoenable\] \[-noenable\] \
+\[-c command\] \[-Evar=x\] \[-e enable-password\] \[-f cloginrc-file\] \
+\[-p user-password\] \[-s script-file\] \[-t timeout\] \[-u username\] \
 \[-v vty-password\] \[-w enable-username\] \[-x command-file\] \
 \[-y ssh_cypher_type\] router \[router...\]\n"
 
@@ -28,6 +28,7 @@ set usage "Usage: $argv0 \[-dSV\] \[-autoenable\] \[-noenable\] \[-c command\] \
 set password_file $env(HOME)/.cloginrc
 # Default is to login to the access point
 set do_command 0
+set do_interact 0
 set do_script 0
 # The default is to automatically enable
 set avenable 1
@@ -48,7 +49,7 @@ set timeoutdflt 45
 set int_file {}
 set int_lineno {}
 #
-set send_human {.4 .4 .7 .3 5}
+set send_human {.2 .1 .4 .2 1}
 # new option to provide "login" command capabilities
 set loginonly 0
 
@@ -92,6 +93,9 @@ for {set i 0} {$i < $argc} {incr i} {
 	    set do_cloginrcdbg 1
 	} -M* {
 	    set do_cloginrcdbg 2
+	# interactive
+	} -i* {
+	    set do_interact 1
 	# VTY Password
 	} -p* {
 	    if {! [regexp .\[pP\](.+) $arg ignore userpasswd]} {
@@ -253,7 +257,7 @@ proc add {var args} {
 proc include {args} {
     global env
     regsub -all "(^{|}$)" $args {} args
-    if { [regexp "^/" $args ignore] == 0 } {
+    if {[regexp "^/" $args ignore] == 0} {
 	set args $env(HOME)/$args
     }
     source_password_file $args
@@ -373,7 +377,14 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
 		continue;
 	    }
 
-	    set commands [split $command \;]
+	    # handle escaped ;s in commands, and ;; and ^;
+	    regsub -all {([^\\]);} $command "\\1\u0002;" esccommand
+	    regsub -all {([^\\]);;} $esccommand "\\1;\u0002;" command
+	    regsub {^;} $command "\u0002;" esccommand
+	    regsub -all {[\\];} $esccommand ";" command
+	    regsub -all {\u0002;} $command "\u0002" esccommand
+	    set sep "\u0002"
+	    set commands [split $esccommand $sep]
 	    set num_commands [llength $commands]
 	    set rshfail 0
 	    for {set i 0} {$i < $num_commands && !$rshfail} { incr i} {
@@ -670,7 +681,7 @@ proc do_enable { enauser enapasswd } {
 
 # Run commands given on the command line.
 proc run_commands { prompt command } {
-    global do_saveconfig in_proc platform
+    global do_interact do_saveconfig in_proc platform
     set in_proc 1
 
     # If the prompt is (enable), then we are on a switch and the
@@ -688,7 +699,14 @@ proc run_commands { prompt command } {
     # this is the only way i see to get rid of more prompts in o/p..grrrrr
     log_user 0
 
-    set commands [split $command \;]
+    # handle escaped ;s in commands, and ;; and ^;
+    regsub -all {([^\\]);} $command "\\1\u0002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u0002;" command
+    regsub {^;} $command "\u0002;" esccommand
+    regsub -all {[\\];} $esccommand ";" command
+    regsub -all {\u0002;} $command "\u0002" esccommand
+    set sep "\u0002"
+    set commands [split $esccommand $sep]
     set num_commands [llength $commands]
     # the pager can not be turned off on the PIX, so we have to look
     # for the "More" prompt.  the extreme is equally obnoxious in pre-12.3 XOS,
@@ -727,6 +745,11 @@ proc run_commands { prompt command } {
 	}
     }
     log_user 1
+
+    if { $do_interact == 1 } {
+	interact
+	return 0
+    }
 
     if { [string compare "extreme" "$platform"] } {
 	send -h "exit\r"
@@ -969,7 +992,7 @@ foreach router [lrange $argv $i end] {
     # we are logged in, now figure out the full prompt
     send "\r"
     expect {
-	-re "\[\r\n]+"		{ exp_continue; }
+	-re "\[\r\n]+"	{ exp_continue; }
 	-re "^(.+\[:.])1 ($prompt)" { # stoopid extreme cmd-line numbers and
 				  # prompt based on state of config changes,
 				  # which may have an * at the beginning.
