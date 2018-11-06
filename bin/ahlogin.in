@@ -6,7 +6,7 @@
 @copyright@
 # 
 # ahlogin - Aerohive hiveos login
-https://github.com/inphobia/rancid-aerohive-support/blob/master/bin/ahlogin.in#
+#
 # Derived from cisco clogin to support Aerohive HiveOS devices by Erik Muller <em@netuf.net>
 # https://github.com/ermuller/rancid-stuff
 # then adapted by nick.nauwelaerts@aquafin.be
