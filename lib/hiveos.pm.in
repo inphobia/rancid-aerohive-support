@@ -63,7 +63,7 @@ sub inloop {
 
 TOP: while(<$INPUT>) {
 	tr/\015//d;
-	if  (/[>#]\s?exit$/) {
+	if (/[>#]\s?exit$/) {
 	    $clean_run = 1;
 	    print STDERR "exiting\n" if ($debug);
 	    last;
@@ -82,12 +82,12 @@ TOP: while(<$INPUT>) {
 		print STDERR ("PROMPT MATCH: $prompt\n") if ($debug);
 	    }
 	    print STDERR ("HIT COMMAND:$_\n") if ($debug);
-	    if (! defined($commands{$cmd})) {
+	    if (!defined($commands{$cmd})) {
 		print STDERR "$host: found unexpected command - \"$cmd\"\n";
 		$clean_run = 0;
 		last TOP;
 	    }
-	    if (! defined(&{$commands{$cmd}})) {
+	    if (!defined(&{$commands{$cmd}})) {
 		printf(STDERR "$host: undefined function - \"%s\"\n",
 		       $commands{$cmd});
 		$clean_run = 0;
@@ -159,6 +159,7 @@ sub ShowCapWap {
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
+	last if ($filter_osc >= 1);
 	next if (/^(\s*|\s*$cmd\s*)$/);
 	next if (/^(max )?(retransmit|discovery) count:/i);
 	next if (/(tries|Keepalives|drop)/);
@@ -169,6 +170,7 @@ sub ShowCapWap {
 
 	ProcessHistory("COMMENTS","","","!capwap: $_");
     }
+    if ($filter_osc >= 1) {ProcessHistory("COMMENTS","","","!capwap: <removed>\n");}
     ProcessHistory("COMMENTS","","","!\n");
     return 0;
 }
@@ -181,6 +183,7 @@ sub ShowIDManager {
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
+	last if ($filter_osc >= 1);
 	next if (/^(\s*|\s*$cmd\s*)$/);
 
 	/^\s+\^-- unknown keyword or invalid input\s+$/ && return(1);
@@ -189,6 +192,7 @@ sub ShowIDManager {
 
 	ProcessHistory("COMMENTS","","","!id-manager: $_");
     }
+    if ($filter_osc >= 1) {ProcessHistory("COMMENTS","","","!id-manager: <removed>\n");}
     ProcessHistory("COMMENTS","","","!\n");
     return 0;
 }
@@ -251,7 +255,7 @@ sub WriteTerm {
 	#   <ip_addr|ipv6_addr|string_64> [ shared-secret <string> ] [ acct-port <number> ] [ via-vpn-tunnel ]
 	# security-object <string> security aaa radius-server {primary|backup1|backup2|backup3} \
 	#   <ip_addr|ipv6_addr|string_64> [ shared-secret <string> ] [ auth-port <number> ] [ acct-port <number> ] [ via-vpn-tunnel ]
-	if (/^(security-object \S+ security aaa radius-server (accounting )?(primary|backup(1|2|3)) \S+ shared-secret )\S+ (\S+.*)?$/ &&  $filter_pwds >= 2) {
+	if (/^(security-object \S+ security aaa radius-server (accounting )?(primary|backup(1|2|3)) \S+ shared-secret )\S+ (\S+.*)?$/ && $filter_pwds >= 2) {
 		ProcessHistory("","","","!$1<removed> $5\n");
 		next;
 	}
