@@ -6,7 +6,7 @@
 @copyright@
 # 
 # ahlogin - Aerohive hiveos login
-#
+https://github.com/inphobia/rancid-aerohive-support/blob/master/bin/ahlogin.in#
 # Derived from cisco clogin to support Aerohive HiveOS devices by Erik Muller <em@netuf.net>
 # https://github.com/ermuller/rancid-stuff
 # then adapted by nick.nauwelaerts@aquafin.be
@@ -40,6 +40,8 @@ set do_passwd 1
 set do_enapasswd 1
 # Save config, if prompted
 set do_saveconfig 0
+# cloginrc debugging knob
+set do_cloginrcdbg 0
 # Sometimes routers take awhile to answer (the default is 10 sec)
 set timeoutdflt 45
 # intialize cloginrc parsing stacks
