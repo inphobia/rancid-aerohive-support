@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: hlogin.in 3912 2018-10-24 22:26:50Z heas $
+## $Id: hlogin.in 3922 2018-11-06 00:02:30Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -111,7 +111,7 @@ proc login { router user userpswd passwd enapasswd cmethod cyphertype identfile 
     # if telnet fails with connection refused, try ssh
     expect {
 	"Press any key to continue" {
-	    send " "
+	    send "\r"
 	    exp_continue
 	}
 	"Enter switch number to connect to or <CR>:" {
@@ -263,18 +263,18 @@ proc run_commands { prompt command } {
     log_user 0
 
     # handle escaped ;s in commands, and ;; and ^;
-    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
-    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
-    regsub {^;} $command "\u002;" esccommand
+    regsub -all {([^\\]);} $command "\\1\u0002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u0002;" command
+    regsub {^;} $command "\u0002;" esccommand
     regsub -all {[\\];} $esccommand ";" command
-    regsub -all {\u002;} $command "\u002" esccommand
-    set sep "\u002"
+    regsub -all {\u0002;} $command "\u0002" esccommand
+    set sep "\u0002"
     set commands [split $esccommand $sep]
     set num_commands [llength $commands]
     # if the pager can not be turned off, we have to look for the "More"
     # prompt.
     for {set i 0} {$i < $num_commands} { incr i} {
-	send -h -- "[subst -nocommands [lindex $commands $i]]\r"
+	send -- "[subst -nocommands [lindex $commands $i]]\r"
 	expect {
 	    -re "^\[^\n\r *]*$reprompt"	{ catch {send_user -- "$expect_out(buffer)"} }
 	    -re "^\[^\n\r]*$reprompt "	{ catch {send_user -- "$expect_out(buffer)"} }

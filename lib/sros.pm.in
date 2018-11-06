@@ -1,6 +1,6 @@
 package sros;
 ##
-## $Id: sros.pm.in 3911 2018-10-24 16:12:57Z heas $
+## $Id: sros.pm.in 3918 2018-10-30 15:48:47Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -119,9 +119,14 @@ sub BootLog {
 	    next if ($memoryseen++);
 	    ProcessHistory("COMMENTS","keysort","A1",
 			   "#Total memory: $1\n");
+	    ProcessHistory("COMMENTS","keysort","B1",
+			   "#Chassis type: $2\n");
 	    ProcessHistory("COMMENTS","keysort","B2",
 			   "#Card type: $3\n");
 	}
+	/^chassis serial number is \'(.*)\'/i &&
+	    ProcessHistory("COMMENTS","keysort","B1",
+			   "#Chassis serial number: $1\n") && next;
     }
 }
 # This routine parses "show bof"

@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: fnlogin.in 3912 2018-10-24 22:26:50Z heas $
+## $Id: fnlogin.in 3915 2018-10-29 21:05:01Z heas $
 ## patched to accomplish fortinet from nlogin
 ## by: Daniel G. Epstein <dan at rootlike.com>
 ## adapted by: Diego Ercolani <diego.ercolani at ssis.sm>
@@ -485,16 +485,16 @@ proc run_commands { prompt command } {
     set in_proc 1
 
     # handle escaped ;s in commands, and ;; and ^;
-    regsub -all {([^\\]);} $command "\\1\u002;" esccommand
-    regsub -all {([^\\]);;} $esccommand "\\1;\u002;" command
-    regsub {^;} $command "\u002;" esccommand
+    regsub -all {([^\\]);} $command "\\1\u0002;" esccommand
+    regsub -all {([^\\]);;} $esccommand "\\1;\u0002;" command
+    regsub {^;} $command "\u0002;" esccommand
     regsub -all {[\\];} $esccommand ";" command
-    regsub -all {\u002;} $command "\u002" esccommand
-    set sep "\u002"
+    regsub -all {\u0002;} $command "\u0002" esccommand
+    set sep "\u0002"
     set commands [split $esccommand $sep]
     set num_commands [llength $commands]
     for {set i 0} {$i < $num_commands} { incr i} {
-	send -h -- "[subst -nocommands [lindex $commands $i]]\r"
+	send -- "[subst -nocommands [lindex $commands $i]]\r"
 	expect {
             -re "$prompt"			{ }
 	    -gl "--More--"			{ send -h " "
