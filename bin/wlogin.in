@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: wlogin.in 3915 2018-10-29 21:05:01Z heas $
+## $Id: wlogin.in 3934 2018-12-06 23:06:14Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -294,7 +294,7 @@ proc run_commands { prompt command } {
 
     # match cisco config mode prompts too, such as router(config-if)#,
     # but catalyst does not change in this fashion.
-    regsub -all {^(.{1,11}).*([#>])$} $prompt {\1} reprompt
+    regsub -all {^(.*)([#>])$} $prompt {\1} reprompt
     append reprompt {([^#>\r\n]+)?[#>]}
 
     # this is the only way i see to get rid of more prompts in o/p..grrrrr

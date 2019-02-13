@@ -1,6 +1,6 @@
 package arcos;
 ##
-## $Id: arcos.pm.in 3877 2018-09-07 18:27:23Z heas $
+## $Id: arcos.pm.in 3959 2019-01-23 03:36:20Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -31,9 +31,7 @@ sub init {
     # add content lines and separators
     ProcessHistory("","","","!RANCID-CONTENT-TYPE: $devtype\n!\n");
     ProcessHistory("COMMENTS","keysort","B0","!\n");
-    ProcessHistory("COMMENTS","keysort","D0","!\n");
-    ProcessHistory("COMMENTS","keysort","F0","!\n");
-    ProcessHistory("COMMENTS","keysort","G0","!\n");
+    ProcessHistory("COMMENTS","keysort","C0","!\n");
 
     0;
 }
@@ -45,17 +43,13 @@ sub inloop {
 
 TOP: while(<$INPUT>) {
 	tr/\015//d;
-	if (/[>#]\s?exit$/) {
-	    $clean_run = 1;
-	    last;
-	}
 	if (/^Error:/) {
 	    print STDOUT ("$host clogin error: $_");
 	    print STDERR ("$host clogin error: $_") if ($debug);
 	    $clean_run = 0;
 	    last;
 	}
-	while (/[>#]\s*($cmds_regexp)\s*$/) {
+	while (/[#]\s*($cmds_regexp)\s*$/) {
 	    $cmd = $1;
 	    if (!defined($prompt)) {
 		$prompt = ($_ =~ /^([^#>]+[#>])/)[0];
@@ -81,6 +75,10 @@ TOP: while(<$INPUT>) {
 		last TOP;
 	    }
 	}
+	if (/[#]\s?quit$/) {
+	    $clean_run = 1;
+	    last;
+	}
     }
 }
 
@@ -91,23 +89,76 @@ sub ShowVersion {
 
     while (<$INPUT>) {
 	tr/\015//d;
-	if (/^$prompt/) { $found_version = 1; last};
 	next if (/^(\s*|\s*$cmd\s*)$/);
+	last if (/^$prompt/);
 	next if (/^\s+\^$/);
 	return(1) if (/Line has invalid autocommand /);
 	return(1) if (/(invalid (input|command) detected|type help or )/i);
-	return(0) if ($found_version);		# Only do this routine once
 	return(-1) if (/command authorization failed/i);
 
-	ProcessHistory("","","","$_");
+	/version product-name "([^\"]*)"/ &&
+	    ProcessHistory("COMMENTS","keysort","A1",
+			   "!Chassis type: $1\n");
+	/version serial-num (\S+)/ &&
+	    ProcessHistory("COMMENTS","keysort","D9",
+			   "!Serial Number: $1\n");
+	/version total-memory "([^\"]*)"/ &&
+	    ProcessHistory("COMMENTS","keysort","B1", "!Memory: $1\n");
+
+	ProcessHistory("COMMENTS","keysort","VERSION","! $_");
     }
+    ProcessHistory("COMMENTS","keysort","VERSION","!\n");
+    return(0);
+}
+# This routine parses "show features"
+sub ShowFeatures {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowVersion: $_" if ($debug);
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	next if (/^(\s*|\s*$cmd\s*)$/);
+	last if (/^$prompt/);
+	next if (/^\s+\^$/);
+	return(1) if (/Line has invalid autocommand /);
+	return(1) if (/(invalid (input|command) detected|type help or )/i);
+	return(-1) if (/command authorization failed/i);
+
+	ProcessHistory("","","","! $_");
+    }
+    ProcessHistory("","","","!\n");
     return(0);
 }
 
-# This routine processes a "write term"
+# This routine parses "show hardware"
+sub ShowHardware {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In ShowVersion: $_" if ($debug);
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	next if (/^(\s*|\s*$cmd\s*)$/);
+	last if (/^$prompt/);
+	next if (/^\s+\^$/);
+	return(1) if (/Line has invalid autocommand /);
+	return(1) if (/(invalid (input|command) detected|type help or )/i);
+	return(-1) if (/command authorization failed/i);
+
+	# XXX for now, drop the per-unit information.  Appears to be mostly
+	# useless.
+	last if (/^UNIT/);
+
+	ProcessHistory("","","","! $_");
+    }
+    ProcessHistory("","","","!\n");
+    return(0);
+}
+
+# This routine processes a "show running-config"
 sub WriteTerm {
     my($INPUT, $OUTPUT, $cmd) = @_;
     print STDERR "    In WriteTerm: $_" if ($debug);
+    my($comment, $linecnt);
 
     while (<$INPUT>) {
 TOP:
@@ -132,6 +183,7 @@ TOP:
 	}
 	/Non-Volatile memory is in use/ && return(-1); # NvRAM is locked
 	/% Configuration buffer full, / && return(-1); # buffer is in use
+	$linecnt++;
 
 	# skip the crap
 	if (/^(##+|(building|current) configuration)/i) {
@@ -157,13 +209,31 @@ TOP:
 	}
 	$comment = 0;
 
+	# prune bgp passwords, possibly others
+	if (/^(\s+auth-password\s+)(\S+)/ && $filter_pwds >= 1) {
+	    ProcessHistory("","","","!$1<removed>$'"); next;
+	}
+
+	# XXX prune snmp communities
+	#if (/^(snmp-server .*community) ([08] )?(\S+)/) {
+	#    if ($filter_commstr) {
+	#	    ProcessHistory("SNMPSERVERCOMM","keysort","$_", "!$1 <removed>$'") && next;
+	#	} else {
+	#	    ProcessHistory("SNMPSERVERCOMM","keysort","$_","$_") && next;
+	#    }
+	#}   
+	# prune tacacs/radius server keys
+	if (/^(\s+(tacacs|radius) secret-key\s)(\S+)/ && $filter_pwds >= 1) {
+	    ProcessHistory("","","","!$1<removed>$'"); next;
+	}
+
 	# catch anything that wasnt matched above.
 	ProcessHistory("","","","$_");
-	# end of config.  the ": " game is for the PIX
-	if (/^(: +)?end$/) {
-	    $found_end = 1;
-	    return(0);
-	}
+    }
+    # arcos lacks a definitive "end of config" marker.  if we have seen at
+    # least 5 lines of input, we can be reasonably sure that we have the config.
+    if ($linecnt > 5) {
+	$found_end = 1;
     }
 
     return(0);

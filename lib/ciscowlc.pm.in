@@ -1,6 +1,6 @@
 package ciscowlc;
 ##
-## $Id: ciscowlc.pm.in 3906 2018-10-13 00:39:22Z heas $
+## $Id: ciscowlc.pm.in 3938 2019-01-09 20:20:57Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -151,7 +151,7 @@ sub ShowSysinfo {
 	if (/^Number of Active Clients/) { $skipprocess = 1; }
 	if (/^OUI Classification Failure Count/) { $skipprocess = 1; }
 	if (/^(memory|cpu) (current|average)/i) { $skipprocess = 1; }
-	if (/^(internal|external) temperature/i) { $skipprocess=1; }
+	if (/^(mgig|internal|external) temperature/i) { $skipprocess=1; }
 	if (/rpm$/) { $skipprocess = 1; }
 
 	last if (/^$prompt/);

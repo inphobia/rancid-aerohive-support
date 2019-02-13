@@ -1,6 +1,6 @@
 package bigip;
 ##
-## $Id: bigip.pm.in 3459 2016-09-08 21:37:33Z heas $
+## $Id: bigip.pm.in 3933 2018-11-30 19:28:47Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -78,6 +78,23 @@ TOP: while(<$INPUT>) {
 	    last;
 	}
     }
+}
+
+# This routine parses a single command that returns no required info.  The
+# output is discarded.
+sub RunCommandTMSH {
+    my($INPUT, $OUTPUT, $cmd) = @_;
+    print STDERR "    In RunCommandTMSH: $_" if ($debug);
+
+    while (<$INPUT>) {
+	tr/\015//d;
+	# Needed for when our prompt changes due to our executed command (for
+	# example, after executing 'cd /')
+	$prompt = ($_ =~ /^([^#]+#)/)[0];
+	$prompt =~ s/([][}{)(\\])/\\$1/g;
+	last if (/^$prompt/);
+    }
+    return(0);
 }
 
 # This routine parses "tmsh show /sys version"

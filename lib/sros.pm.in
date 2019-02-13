@@ -1,6 +1,6 @@
 package sros;
 ##
-## $Id: sros.pm.in 3918 2018-10-30 15:48:47Z heas $
+## $Id: sros.pm.in 3939 2019-01-16 18:53:34Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -41,7 +41,6 @@ sub init {
     ProcessHistory("COMMENTS","keysort","C0","#\n");	# show information
     ProcessHistory("COMMENTS","keysort","D0","#\n");    # show redundancy
     ProcessHistory("COMMENTS","keysort","E0","#\n");	# show chassis
-    ProcessHistory("COMMENTS","keysort","F0","#\n");	# show bootlog
 
     0;
 }
@@ -57,7 +56,8 @@ CMD:	if (/[#]\s?logout\s*$/) {
 	    $clean_run = 1;
 	    last;
 	}
-	if (/^Error:/ && ! /^Error: Invalid parameter\./) {
+	if (/^Error:/ &&
+	    !(/^Error: Invalid parameter\./ || /^Error: Bad command\./)) {
 	    print STDOUT ("$host clogin error: $_");
 	    print STDERR ("$host clogin error: $_") if ($debug);
 	    $clean_run = 0;
@@ -216,11 +216,13 @@ sub ShowChassis {
 	/[-=]+$/i && next;
 
 	/^\s+type\s+:\s+(.*)/i &&
-	    ProcessHistory("COMMENTS","keysort","B1", "#Chassis type: $1\n") &&
+	    ProcessHistory("COMMENTS","keysort","E1","# $_") &&
 	    next;
 	/^\s+serial number\s+:\s+(.*)/i &&
 	    ProcessHistory("COMMENTS","keysort","B1",
-			   "#Chassis serial number: $1\n") && next;
+			   "#Chassis serial number: $1\n") &&
+	    ProcessHistory("COMMENTS","keysort","E1","# $_") &&
+	    next;
 	ProcessHistory("COMMENTS","keysort","E1","# $_");
     }
 }

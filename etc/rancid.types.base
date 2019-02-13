@@ -52,10 +52,14 @@ arbor;command;arbor::ShowConfig;config show
 #
 # Arrcus
 arcos;script;rancid -t arcos
-arcos;login;clogin
+arcos;login;xilogin
 arcos;module;arcos
 arcos;inloop;arcos::inloop
-#XXX arcos;command;arcos::ShowVersion;show version
+arcos:command;rancid::RunCommand;timestamp disable 
+arcos;command;arcos::ShowVersion;show version
+arcos;command;arcos::ShowFeatures;show features
+arcos;command;arcos::ShowHardware;show hardware
+arcos;command;arcos::WriteTerm;show running-config
 #
 arista;script;rancid -t arista
 arista;login;clogin
@@ -170,6 +174,7 @@ cisco;command;ios::ShowContCbus;show controllers cbus
 cisco;command;ios::ShowDiagbus;show diagbus
 cisco;command;ios::ShowDiag;show diag
 cisco;command;ios::ShowCapture;show capture;ASA/PIX
+cisco;command;ios::ShowModule;show module switch;c6500 ios vss
 cisco;command;ios::ShowModule;show module;c6500 ios
 cisco;command;ios::ShowSpeVersion;show spe version
 cisco;command;ios::ShowC7200;show c7200
@@ -229,7 +234,8 @@ cisco-nx;command;nxos::ShowFex;show fex
 cisco-nx;command;nxos::WriteTerm;show running-config
 #
 # Cisco small business devices.  These are peculiar; most likely this will not
-# work with all of them.
+# work with all of them, but is also reported to work with other Marvell OEMs,
+# including PowerConnect 5448
 cisco-sb;script;rancid -t cisco-sb
 cisco-sb;login;csblogin
 cisco-sb;module;iossb
@@ -401,7 +407,8 @@ bigip13;command;rancid::RunCommand;modify cli preference pager disabled display-
 bigip13;command;bigip::ShowVersion;show sys version
 bigip13;command;bigip::ShowHardware;show sys hardware
 bigip13;command;bigip::ShowLicense;show sys license 
-bigip13;command;bigip::ShowRouteStatic;show /net route static
+bigip13;command;bigip::RunCommandTMSH;cd /
+bigip13;command;bigip::ShowRouteStatic;show /net recursive route static
 bigip13;command;bigip::WriteTerm;list all-properties recursive
 #
 # Force 10 and Dell Force10.
@@ -523,6 +530,7 @@ juniper;module;junos
 juniper;inloop;junos::inloop
 juniper;command;junos::ShowChassisClocks;show chassis clocks
 juniper;command;junos::ShowChassisEnvironment;show chassis environment
+juniper;command;junos::ShowChassisFirmware;show chassis firmware local
 juniper;command;junos::ShowChassisFirmware;show chassis firmware
 juniper;command;junos::ShowChassisFpcDetail;show chassis fpc detail
 juniper;command;junos::ShowChassisHardware;show chassis hardware detail

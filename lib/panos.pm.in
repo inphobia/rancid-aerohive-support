@@ -1,6 +1,6 @@
 package panos;
 ##
-## $Id: panos.pm.in 3924 2018-11-06 16:22:39Z heas $
+## $Id: panos.pm.in 3928 2018-11-16 18:50:36Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -129,6 +129,7 @@ sub ShowInventory {
     while (<$INPUT>) {
 	tr/\015//d;
 	last if (/^$prompt/);
+	return(1) if (/^Invalid syntax/);
 
 	ProcessHistory("INV","","","#$_");
     }

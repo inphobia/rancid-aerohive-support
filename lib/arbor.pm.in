@@ -1,6 +1,6 @@
 package arbor;
 ##
-## $Id: arbor.pm.in 3892 2018-09-18 18:05:51Z heas $
+## $Id: arbor.pm.in 3960 2019-01-24 18:21:02Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -52,7 +52,7 @@ TOP: while(<$INPUT>) {
 	if (/^Error:/) {
 	    print STDOUT ("$host anlogin error: $_");
 	    print STDERR ("$host anlogin error: $_") if ($debug);
-	    $clean_run=0;
+	    $clean_run = 0;
 	    last;
 	}
 	while (/[#>]\s*($cmds_regexp)\s*$/) {

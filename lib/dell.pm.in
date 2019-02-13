@@ -1,6 +1,6 @@
 package dell;
 ##
-## $Id: dell.pm.in 3699 2017-07-18 13:40:55Z heas $
+## $Id: dell.pm.in 3936 2018-12-17 21:32:17Z heas $
 ##
 ## fnrancid patched to dlrancid to accomplish D-Link support
 ## adapted by: Gavin McCullagh <gmccullagh at gmail.com>
@@ -62,7 +62,7 @@ sub inloop {
 TOP: while(<$INPUT>) {
 	tr/\015//d;
 	# XXX this match is not correct for DELL
-	if (/[>#]\s?exit$/) {
+	if (/[>#]\s?exit(?:$|Connection)/) {
 	    $clean_run = 1;
 	    last;
 	}

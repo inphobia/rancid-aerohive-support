@@ -1,7 +1,49 @@
-3.99.99
+3.x
 	ahlogin, hiveos.pm: add support for aerohive hiveos access points
 
-	panos: add show chassis inventory - Erik Muller
+3.9
+	ios.pm: add show module switch for 6500 vss data - Per-Olof Olsson
+
+	arcos.pm: add tacacs key filter
+
+	arcos.pm: fix prompt handling - WIP
+
+	noklogin: exit if pager disable command is not permitted
+
+	xilogin: handle pager disable for arcos
+
+	junos.pm: add ShowSystemConfDB()
+
+	sros.pm: ignore Error: Bad command. error msg form older sros devices
+
+	ciscowlc.pm: filter mgig temperature - Erik Muller
+
+	anlogin: make the pty allocation the same as in jlogin
+
+	dell.pm: powerconnect N[234]000 do not reliably echo the <CR> after
+	exit - Wayne Eisenberg
+
+	clogin: new variation of username prompt - Wayne Eisenberg
+
+	wlogin: fix prompt match in run_commands() which was failing for longer
+	hostnames/prompts - Erik Muller
+
+	bigip: add "cd /" command for v13 to collect all routes - Wouter de Jong
+
+	nxos.pm: recognize older SAN nexus devices - Wouter de Jong
+
+	a10login: handle logout prompt variation for older ACOS - Wouter de Jong
+
+	junos.pm: handle show chassis firmware bug for 11.x on EX - Wouter de
+	Jong
+
+	panos.pm: ignore show chassis inventory on invalid syntax
+
+	sros.pm: remove duplication of chassis type - Greg Hankins
+
+	sros.pm: restore chassis type line - Greg Hankins
+
+	panos.pm: add show chassis inventory - Erik Muller
 
 	nxos.pm: filter bcm_mem_lock_trace.log since ~7.0.3 - Erik Muller
 

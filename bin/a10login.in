@@ -1,6 +1,6 @@
 #! @EXPECT_PATH@ --
 ##
-## $Id: a10login.in 3915 2018-10-29 21:05:01Z heas $
+## $Id: a10login.in 3930 2018-11-28 18:59:40Z heas $
 ##
 ## @PACKAGE@ @VERSION@
 @copyright@
@@ -318,7 +318,7 @@ proc run_commands { prompt command } {
 						  send -h "exit\r"
 						  exp_continue;
 						}
-	"Are you sure to quit"			{
+	"Are you sure .*to quit"		{
 						  catch {send "y\r"}
 						  exp_continue
 						}
